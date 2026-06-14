@@ -2,16 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { marked } from "marked";
-import { db } from "@/lib/db";
 import { JOURNAL } from "@/lib/constants";
 import { Badge } from "@/components/ui/Badge";
+import { getAnnouncementBySlug, DEMO_ANNOUNCEMENTS } from "@/lib/demo-data";
 
-export const dynamic = "force-dynamic";
-
-async function getAnnouncement(slug: string) {
-  return db.announcement.findFirst({
-    where: { slug, publishedAt: { not: null } },
-  });
+export function generateStaticParams() {
+  return DEMO_ANNOUNCEMENTS.map((a) => ({ slug: a.slug }));
 }
 
 export async function generateMetadata({
@@ -20,7 +16,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const ann = await getAnnouncement(slug);
+  const ann = getAnnouncementBySlug(slug);
   if (!ann) return { title: "Not Found" };
   return {
     title: ann.title,
@@ -34,7 +30,7 @@ export default async function AnnouncementPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const ann = await getAnnouncement(slug);
+  const ann = getAnnouncementBySlug(slug);
   if (!ann) notFound();
 
   const html = await marked.parse(ann.body);
@@ -56,12 +52,9 @@ export default async function AnnouncementPage({
         <h1 className="font-display text-3xl font-semibold leading-tight text-ink sm:text-4xl">
           {ann.title}
         </h1>
-        {ann.publishedAt && (
-          <p className="mt-3 text-sm text-secondary">
-            {JOURNAL.shortTitle} ·{" "}
-            {format(ann.publishedAt, "d MMMM yyyy")}
-          </p>
-        )}
+        <p className="mt-3 text-sm text-secondary">
+          {JOURNAL.shortTitle} · {format(ann.publishedAt, "d MMMM yyyy")}
+        </p>
       </header>
 
       <div

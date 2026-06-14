@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { format } from "date-fns";
-import { db } from "@/lib/db";
 import { JOURNAL } from "@/lib/constants";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { IssueCover } from "@/components/issue/IssueCover";
@@ -8,19 +7,17 @@ import {
   ArticleListItem,
   type ArticleListItemData,
 } from "@/components/article/ArticleListItem";
+import {
+  getCurrentIssue,
+  getLatestArticles,
+  getMostReadArticles,
+  DEMO_ANNOUNCEMENTS,
+  type DemoArticle,
+} from "@/lib/demo-data";
 
 export const dynamic = "force-dynamic";
 
-function toListItem(a: {
-  slug: string;
-  title: string;
-  articleType: string;
-  firstPage: number | null;
-  lastPage: number | null;
-  viewsCount: number;
-  authors: { name: string }[];
-  issue?: { number: number; volume: { number: number; year: number } } | null;
-}): ArticleListItemData {
+function toListItem(a: DemoArticle): ArticleListItemData {
   return {
     slug: a.slug,
     title: a.title,
@@ -29,9 +26,9 @@ function toListItem(a: {
     firstPage: a.firstPage,
     lastPage: a.lastPage,
     viewsCount: a.viewsCount,
-    volume: a.issue?.volume.number,
-    issue: a.issue?.number,
-    year: a.issue?.volume.year,
+    volume: a.volumeNumber,
+    issue: a.issueNumber,
+    year: a.volumeYear,
   };
 }
 
@@ -43,98 +40,57 @@ export default async function HomePage({
   const { tab } = await searchParams;
   const activeTab = tab === "most-read" ? "most-read" : "latest";
 
-  const issueInclude = {
-    volume: true,
-    articles: {
-      where: { status: "PUBLISHED" },
-      orderBy: { orderInIssue: "asc" },
-      include: { authors: { orderBy: { order: "asc" as const } } },
-    },
-  } as const;
-
-  const [flaggedIssue, tabArticles, announcements] = await Promise.all([
-    db.issue.findFirst({
-      where: { isCurrent: true, publishedAt: { not: null } },
-      include: issueInclude,
-    }),
-    db.article.findMany({
-      where: { status: "PUBLISHED" },
-      orderBy:
-        activeTab === "most-read"
-          ? { viewsCount: "desc" }
-          : { publishedOnline: "desc" },
-      take: 6,
-      include: {
-        authors: { orderBy: { order: "asc" } },
-        issue: { include: { volume: true } },
-      },
-    }),
-    db.announcement.findMany({
-      where: { publishedAt: { not: null } },
-      orderBy: { publishedAt: "desc" },
-      take: 3,
-    }),
-  ]);
-
-  // Fall back to the most recently published issue if none is flagged current
-  const currentIssue =
-    flaggedIssue ??
-    (await db.issue.findFirst({
-      where: { publishedAt: { not: null } },
-      orderBy: { publishedAt: "desc" },
-      include: issueInclude,
-    }));
+  const currentIssue = getCurrentIssue();
+  const tabArticles =
+    activeTab === "most-read" ? getMostReadArticles(6) : getLatestArticles(6);
+  const announcements = DEMO_ANNOUNCEMENTS.slice(0, 3);
 
   return (
     <div className="grid gap-12 lg:grid-cols-[1fr_320px]">
       <div>
         {/* ===== Current issue hero ===== */}
-        {currentIssue && (
-          <section aria-labelledby="current-issue-heading">
-            <SectionLabel>
-              <span id="current-issue-heading">Current Issue</span>
-            </SectionLabel>
-            <div className="mt-4 grid gap-6 sm:grid-cols-[200px_1fr]">
-              <Link
-                href={`/issues/${currentIssue.volume.number}/${currentIssue.number}`}
-                aria-label={`Browse Volume ${currentIssue.volume.number}, Issue ${currentIssue.number}`}
-              >
-                <IssueCover
-                  volume={currentIssue.volume.number}
-                  issue={currentIssue.number}
-                  year={currentIssue.volume.year}
-                  publishedAt={currentIssue.publishedAt}
-                  size="lg"
-                />
-              </Link>
-              <div>
-                <h2 className="font-display text-2xl font-semibold text-ink">
-                  Volume {currentIssue.volume.number}, Issue{" "}
-                  {currentIssue.number} ({currentIssue.volume.year})
-                </h2>
-                {currentIssue.publishedAt && (
-                  <p className="mt-1 text-sm text-secondary">
-                    Published {format(currentIssue.publishedAt, "d MMMM yyyy")} ·{" "}
-                    {currentIssue.articles.length} articles
-                  </p>
-                )}
-                <div className="mt-3">
-                  {currentIssue.articles.slice(0, 3).map((a) => (
-                    <ArticleListItem key={a.id} article={toListItem(a)} />
-                  ))}
-                </div>
-                <Link
-                  href={`/issues/${currentIssue.volume.number}/${currentIssue.number}`}
-                  className="mt-3 inline-block text-sm font-semibold text-maroon underline decoration-hairline underline-offset-4 hover:decoration-maroon"
-                >
-                  View full table of contents →
-                </Link>
+        <section aria-labelledby="current-issue-heading">
+          <SectionLabel>
+            <span id="current-issue-heading">Current Issue</span>
+          </SectionLabel>
+          <div className="mt-4 grid gap-6 sm:grid-cols-[200px_1fr]">
+            <Link
+              href={`/issues/${currentIssue.volumeNumber}/${currentIssue.number}`}
+              aria-label={`Browse Volume ${currentIssue.volumeNumber}, Issue ${currentIssue.number}`}
+            >
+              <IssueCover
+                volume={currentIssue.volumeNumber}
+                issue={currentIssue.number}
+                year={currentIssue.volumeYear}
+                publishedAt={currentIssue.publishedAt}
+                size="lg"
+              />
+            </Link>
+            <div>
+              <h2 className="font-display text-2xl font-semibold text-ink">
+                Volume {currentIssue.volumeNumber}, Issue{" "}
+                {currentIssue.number} ({currentIssue.volumeYear})
+              </h2>
+              <p className="mt-1 text-sm text-secondary">
+                Published {format(currentIssue.publishedAt, "d MMMM yyyy")} ·{" "}
+                {currentIssue.articleCount} articles
+              </p>
+              <div className="mt-3">
+                {currentIssue.articles.slice(0, 3).map((a) => (
+                  <ArticleListItem key={a.id} article={toListItem(a)} />
+                ))}
               </div>
+              <Link
+                href={`/issues/${currentIssue.volumeNumber}/${currentIssue.number}`}
+                className="mt-3 inline-block text-sm font-semibold text-maroon underline decoration-hairline underline-offset-4 hover:decoration-maroon"
+              >
+                View full table of contents →
+              </Link>
             </div>
-          </section>
-        )}
+          </div>
+        </section>
 
-        {/* ===== Latest / Most Read tabs (link-based, SSR-safe) ===== */}
+        {/* ===== Latest / Most Read tabs ===== */}
         <section className="mt-12" aria-labelledby="browse-heading">
           <div className="flex items-end justify-between border-b border-hairline">
             <h2 id="browse-heading" className="sr-only">
@@ -230,11 +186,9 @@ export default async function HomePage({
                 >
                   {ann.title}
                 </Link>
-                {ann.publishedAt && (
-                  <p className="mt-1 text-xs text-secondary">
-                    {format(ann.publishedAt, "d MMMM yyyy")}
-                  </p>
-                )}
+                <p className="mt-1 text-xs text-secondary">
+                  {format(ann.publishedAt, "d MMMM yyyy")}
+                </p>
               </li>
             ))}
           </ul>
@@ -276,7 +230,7 @@ export default async function HomePage({
         {/* Indexing strip */}
         <section aria-labelledby="indexing-heading">
           <SectionLabel>
-            <span id="indexing-heading">Indexing & Discovery</span>
+            <span id="indexing-heading">Indexing &amp; Discovery</span>
           </SectionLabel>
           <ul className="mt-3 flex flex-wrap gap-2">
             {["Google Scholar", "Crossref DOI", "OAI-PMH", "RSS", "Unilag repository"].map((s) => (

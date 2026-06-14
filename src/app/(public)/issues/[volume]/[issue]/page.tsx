@@ -2,30 +2,16 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
-import { db } from "@/lib/db";
 import { JOURNAL } from "@/lib/constants";
 import { IssueCover } from "@/components/issue/IssueCover";
 import { ArticleListItem } from "@/components/article/ArticleListItem";
+import { getIssue, DEMO_ISSUES } from "@/lib/demo-data";
 
-export const dynamic = "force-dynamic";
-
-async function getIssue(volumeNum: number, issueNum: number) {
-  if (!Number.isInteger(volumeNum) || !Number.isInteger(issueNum)) return null;
-  return db.issue.findFirst({
-    where: {
-      number: issueNum,
-      publishedAt: { not: null },
-      volume: { number: volumeNum },
-    },
-    include: {
-      volume: true,
-      articles: {
-        where: { status: "PUBLISHED" },
-        orderBy: { orderInIssue: "asc" },
-        include: { authors: { orderBy: { order: "asc" } } },
-      },
-    },
-  });
+export function generateStaticParams() {
+  return DEMO_ISSUES.map((i) => ({
+    volume: String(i.volumeNumber),
+    issue: String(i.number),
+  }));
 }
 
 export async function generateMetadata({
@@ -34,11 +20,11 @@ export async function generateMetadata({
   params: Promise<{ volume: string; issue: string }>;
 }): Promise<Metadata> {
   const { volume, issue } = await params;
-  const data = await getIssue(Number(volume), Number(issue));
+  const data = getIssue(Number(volume), Number(issue));
   if (!data) return { title: "Issue not found" };
   return {
-    title: `Volume ${data.volume.number}, Issue ${data.number} (${data.volume.year})`,
-    description: `Table of contents for ${JOURNAL.title}, Volume ${data.volume.number}, Issue ${data.number} (${data.volume.year}).`,
+    title: `Volume ${data.volumeNumber}, Issue ${data.number} (${data.volumeYear})`,
+    description: `Table of contents for ${JOURNAL.title}, Volume ${data.volumeNumber}, Issue ${data.number} (${data.volumeYear}).`,
   };
 }
 
@@ -48,7 +34,7 @@ export default async function IssuePage({
   params: Promise<{ volume: string; issue: string }>;
 }) {
   const { volume, issue } = await params;
-  const data = await getIssue(Number(volume), Number(issue));
+  const data = getIssue(Number(volume), Number(issue));
   if (!data) notFound();
 
   return (
@@ -57,15 +43,15 @@ export default async function IssuePage({
         <Link href="/archives" className="hover:text-maroon">
           Archives
         </Link>{" "}
-        / Volume {data.volume.number} / Issue {data.number}
+        / Volume {data.volumeNumber} / Issue {data.number}
       </nav>
 
       <div className="mt-6 grid gap-8 sm:grid-cols-[220px_1fr]">
         <div>
           <IssueCover
-            volume={data.volume.number}
+            volume={data.volumeNumber}
             issue={data.number}
-            year={data.volume.year}
+            year={data.volumeYear}
             publishedAt={data.publishedAt}
             size="lg"
           />
@@ -77,20 +63,12 @@ export default async function IssuePage({
         </div>
         <div>
           <h1 className="font-display text-3xl font-semibold text-ink">
-            Volume {data.volume.number}, Issue {data.number} (
-            {data.volume.year})
+            Volume {data.volumeNumber}, Issue {data.number} ({data.volumeYear})
           </h1>
-          {data.publishedAt && (
-            <p className="mt-2 text-sm text-secondary">
-              Published {format(data.publishedAt, "d MMMM yyyy")} ·{" "}
-              {data.articles.length} articles · ISSN {JOURNAL.issn}
-            </p>
-          )}
-          {data.coverBlurb && (
-            <p className="mt-3 max-w-2xl font-serif text-base text-secondary">
-              {data.coverBlurb}
-            </p>
-          )}
+          <p className="mt-2 text-sm text-secondary">
+            Published {format(data.publishedAt, "d MMMM yyyy")} ·{" "}
+            {data.articleCount} articles · ISSN {JOURNAL.issn}
+          </p>
 
           <h2 className="section-label mt-8 border-b border-hairline pb-2">
             Table of Contents
