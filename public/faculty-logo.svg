@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <circle cx="200" cy="200" r="190" fill="#fdfdfd" stroke="#DC143C" stroke-width="12"/>
+  <circle cx="200" cy="200" r="150" fill="none" stroke="#DC143C" stroke-width="4" stroke-dasharray="10 10"/>
+  <path d="M 120 250 L 200 120 L 280 250 Z" fill="#DC143C"/>
+  <path d="M 160 250 L 200 170 L 240 250 Z" fill="#fdfdfd"/>
+  <text x="200" y="70" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#DC143C" text-anchor="middle" letter-spacing="1">FACULTY OF</text>
+  <text x="200" y="320" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#DC143C" text-anchor="middle" letter-spacing="1">COMMUNICATION</text>
+  <text x="200" y="360" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#DC143C" text-anchor="middle" letter-spacing="1">&amp; MEDIA STUDIES</text>
+</svg>

@@ -1,0 +1,368 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// Auth & users
+// ============================================================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  title        String? // e.g. "Prof.", "Dr."
+  affiliation  String?
+  orcid        String?
+  bio          String?
+  country      String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  roles               UserRole[]
+  sessions            Session[]
+  submissions         Submission[]       @relation("CorrespondingAuthor")
+  reviewAssignments   ReviewAssignment[] @relation("Reviewer")
+  invitedAssignments  ReviewAssignment[] @relation("InvitedBy")
+  decisions           Decision[]
+  uploadedFiles       StoredFile[]
+  paymentConfirmation Submission[]       @relation("PaymentConfirmedBy")
+  events              SubmissionEvent[]
+  updatedPages        Page[]
+}
+
+model UserRole {
+  id     String @id @default(cuid())
+  userId String
+  role   String // 'AUTHOR' | 'REVIEWER' | 'EDITOR' | 'ADMIN'
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+}
+
+model Session {
+  id        String   @id // SHA-256 hex of the session token
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============================================================
+// Editorial workflow
+// ============================================================
+
+model Submission {
+  id                   String    @id @default(cuid())
+  number               Int       @unique // sequential; displayed as UCR-YYYY-NNNN
+  title                String
+  abstract             String
+  keywordsCsv          String // comma-separated raw author keywords
+  articleType          String // RESEARCH_ARTICLE | REVIEW_ARTICLE | COMMENTARY | BOOK_REVIEW
+  wordCount            Int?
+  status               String // state machine in src/lib/workflow.ts
+  correspondingAuthorId String
+  guidelinesConfirmed  Boolean   @default(false)
+  feeAcknowledged      Boolean   @default(false)
+  paymentConfirmed     Boolean   @default(false)
+  paymentConfirmedAt   DateTime?
+  paymentConfirmedById String?
+  deskRejectReason     String?
+  withdrawnAt          DateTime?
+  submittedAt          DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  correspondingAuthor User              @relation("CorrespondingAuthor", fields: [correspondingAuthorId], references: [id])
+  paymentConfirmedBy  User?             @relation("PaymentConfirmedBy", fields: [paymentConfirmedById], references: [id])
+  authors             SubmissionAuthor[]
+  versions            SubmissionVersion[]
+  assignments         ReviewAssignment[]
+  decisions           Decision[]
+  events              SubmissionEvent[]
+  article             Article?
+
+  @@index([status])
+  @@index([correspondingAuthorId])
+}
+
+model SubmissionAuthor {
+  id              String  @id @default(cuid())
+  submissionId    String
+  name            String
+  email           String
+  affiliation     String?
+  orcid           String?
+  isCorresponding Boolean @default(false)
+  order           Int
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([submissionId])
+}
+
+model SubmissionVersion {
+  id                String   @id @default(cuid())
+  submissionId      String
+  versionNumber     Int // 1 = original submission
+  anonymizedFileId  String
+  titlePageFileId   String?
+  authorNote        String? // response to reviewers (revisions)
+  createdAt         DateTime @default(now())
+
+  submission     Submission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  anonymizedFile StoredFile  @relation("AnonymizedFile", fields: [anonymizedFileId], references: [id])
+  titlePageFile  StoredFile? @relation("TitlePageFile", fields: [titlePageFileId], references: [id])
+
+  @@unique([submissionId, versionNumber])
+}
+
+model StoredFile {
+  id           String   @id @default(cuid())
+  filename     String // stored name on disk: {cuid}.{ext}
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  kind         String // ANONYMIZED_MANUSCRIPT | TITLE_PAGE | REVIEW_ATTACHMENT | TYPESET_PDF
+  uploadedById String?
+  createdAt    DateTime @default(now())
+
+  uploadedBy          User?               @relation(fields: [uploadedById], references: [id])
+  anonymizedVersions  SubmissionVersion[] @relation("AnonymizedFile")
+  titlePageVersions   SubmissionVersion[] @relation("TitlePageFile")
+  articles            Article[]
+}
+
+model ReviewAssignment {
+  id            String    @id @default(cuid())
+  submissionId  String
+  reviewerId    String
+  versionNumber Int
+  status        String // INVITED | ACCEPTED | DECLINED | SUBMITTED | CANCELLED
+  invitedAt     DateTime  @default(now())
+  respondedAt   DateTime?
+  dueDate       DateTime
+  invitedById   String
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewer   User       @relation("Reviewer", fields: [reviewerId], references: [id])
+  invitedBy  User       @relation("InvitedBy", fields: [invitedById], references: [id])
+  review     Review?
+
+  @@unique([submissionId, reviewerId, versionNumber])
+  @@index([reviewerId])
+}
+
+model Review {
+  id               String   @id @default(cuid())
+  assignmentId     String   @unique
+  recommendation   String // ACCEPT | MINOR_REVISIONS | MAJOR_REVISIONS | REJECT
+  commentsToAuthor String
+  commentsToEditor String?
+  submittedAt      DateTime @default(now())
+
+  assignment ReviewAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+}
+
+model Decision {
+  id            String   @id @default(cuid())
+  submissionId  String
+  versionNumber Int
+  decision      String // SEND_TO_REVIEW | DESK_REJECT | ACCEPT | MINOR_REVISIONS | MAJOR_REVISIONS | REJECT
+  letterToAuthor String
+  decidedById   String
+  createdAt     DateTime @default(now())
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  decidedBy  User       @relation(fields: [decidedById], references: [id])
+
+  @@index([submissionId])
+}
+
+model SubmissionEvent {
+  id           String   @id @default(cuid())
+  submissionId String
+  type         String
+  payload      String? // JSON
+  actorId      String?
+  createdAt    DateTime @default(now())
+
+  submission Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  actor      User?      @relation(fields: [actorId], references: [id])
+
+  @@index([submissionId])
+}
+
+// ============================================================
+// Published content
+// ============================================================
+
+model Volume {
+  id        String   @id @default(cuid())
+  number    Int      @unique
+  year      Int
+  createdAt DateTime @default(now())
+
+  issues Issue[]
+}
+
+model Issue {
+  id          String    @id @default(cuid())
+  volumeId    String
+  number      Int
+  title       String?
+  publishedAt DateTime?
+  isCurrent   Boolean   @default(false)
+  coverBlurb  String?
+  createdAt   DateTime  @default(now())
+
+  volume   Volume    @relation(fields: [volumeId], references: [id], onDelete: Cascade)
+  articles Article[]
+
+  @@unique([volumeId, number])
+}
+
+model Article {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  issueId         String?
+  submissionId    String?   @unique
+  title           String
+  abstract        String
+  articleType     String
+  doi             String?
+  firstPage       Int?
+  lastPage        Int?
+  receivedDate    DateTime?
+  acceptedDate    DateTime?
+  publishedOnline DateTime?
+  status          String    @default("DRAFT") // DRAFT | PUBLISHED
+  pdfFileId       String?
+  viewsCount      Int       @default(0)
+  orderInIssue    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  issue      Issue?             @relation(fields: [issueId], references: [id])
+  submission Submission?        @relation(fields: [submissionId], references: [id])
+  pdfFile    StoredFile?        @relation(fields: [pdfFileId], references: [id])
+  authors    ArticleAuthor[]
+  keywords   ArticleKeyword[]
+  references ArticleReference[]
+  views      ArticleView[]
+
+  @@index([status])
+  @@index([issueId])
+}
+
+model ArticleAuthor {
+  id              String  @id @default(cuid())
+  articleId       String
+  name            String // display form "First Last"
+  lastName        String
+  firstName       String
+  email           String?
+  affiliation     String?
+  orcid           String?
+  isCorresponding Boolean @default(false)
+  order           Int
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId])
+}
+
+model Keyword {
+  id    String @id @default(cuid())
+  slug  String @unique
+  label String
+
+  articles ArticleKeyword[]
+}
+
+model ArticleKeyword {
+  articleId String
+  keywordId String
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  keyword Keyword @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, keywordId])
+}
+
+model ArticleReference {
+  id        String @id @default(cuid())
+  articleId String
+  order     Int
+  text      String
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId])
+}
+
+model ArticleView {
+  id        String   @id @default(cuid())
+  articleId String
+  dayHash   String // sha256(ip|ua|date|articleId)
+  createdAt DateTime @default(now())
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, dayHash])
+}
+
+// ============================================================
+// Site content & config
+// ============================================================
+
+model Page {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  body        String // markdown
+  updatedAt   DateTime @updatedAt
+  updatedById String?
+
+  updatedBy User? @relation(fields: [updatedById], references: [id])
+}
+
+model Announcement {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  body        String // markdown
+  kind        String // NEWS | CALL_FOR_PAPERS
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model BoardMember {
+  id          String  @id @default(cuid())
+  name        String
+  role        String // 'Editor-in-Chief' | 'Editor' | 'Member'
+  affiliation String
+  orcid       String?
+  order       Int
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model EmailLog {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  template  String
+  status    String // SENT | FAILED | DEV_LOGGED
+  error     String?
+  createdAt DateTime @default(now())
+}

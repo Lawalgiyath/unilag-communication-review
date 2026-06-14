@@ -1,0 +1,46 @@
+{
+  "name": "unilag-communication-review",
+  "version": "1.0.0",
+  "private": true,
+  "description": "UNILAG Communication Review — academic journal website and editorial system",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "db:reset": "prisma migrate reset --force"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@paralleldrive/cuid2": "^3.3.0",
+    "@prisma/client": "^6.8.2",
+    "bcryptjs": "^2.4.3",
+    "date-fns": "^4.1.0",
+    "marked": "^18.0.5",
+    "next": "^15.3.3",
+    "nodemailer": "^6.10.1",
+    "pdf-lib": "^1.17.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.8",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.15.21",
+    "@types/nodemailer": "^6.4.17",
+    "@types/react": "^19.1.5",
+    "@types/react-dom": "^19.1.5",
+    "prisma": "^6.8.2",
+    "tailwindcss": "^4.1.8",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}
