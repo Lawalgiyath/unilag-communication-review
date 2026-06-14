@@ -278,26 +278,46 @@ export const DEMO_ANNOUNCEMENTS: DemoAnnouncement[] = [
   {
     id: "ann-1",
     slug: "call-for-papers-vol-13",
-    title: "Call for Papers — Volume 13 (2027)",
-    body: `The UNILAG Communication Review invites original research articles, review articles, commentaries, and book reviews for Volume 13 (2027).\n\n**Submission deadline:** 31 October 2026.\n\nWe welcome contributions in all areas of communication and media studies with particular emphasis on African media systems, digital communication, and media policy. All submissions undergo double-blind peer review.\n\nPlease review our [submission guidelines](/submission-guidelines) before submitting.`,
+    title: "Call for Papers — Volume 13 (2027): Communication, AI and African Futures",
+    body: `UNILAG Communication Review invites submissions for **Volume 13 (2027)**, with a special focus on **Communication, Artificial Intelligence, and African Futures**.
+
+We welcome original research articles, review articles, and commentaries addressing themes including (but not limited to):
+
+- Generative AI in African newsrooms and creative industries
+- Algorithmic governance, moderation, and African languages
+- AI, misinformation, and electoral integrity
+- Data justice and digital rights in the Global South
+- Indigenous knowledge systems and machine learning
+
+**Submission deadline:** 31 October 2026
+
+Manuscripts must not exceed 6,000 words (including references), formatted in APA 7th Edition, 12-point Times New Roman, double-spaced. All submissions undergo double-blind peer review.
+
+Submit through the journal's online submission system. General submissions outside the special focus remain welcome on a rolling basis.`,
     kind: "CALL_FOR_PAPERS",
-    publishedAt: new Date("2026-06-01"),
+    publishedAt: new Date("2026-05-02"),
   },
   {
     id: "ann-2",
-    slug: "indexing-google-scholar",
-    title: "Communication Review now indexed in Google Scholar",
-    body: `We are pleased to announce that all articles published in the UNILAG Communication Review are now indexed in Google Scholar. Authors can verify their articles' presence by searching article titles directly in Google Scholar.\n\nThis milestone improves the discoverability and citation reach of all published work. We thank our editorial board and contributing authors for their role in achieving this recognition.`,
+    slug: "vol-12-issue-2-published",
+    title: "Volume 12, Issue 2 (2026) now online",
+    body: `We are delighted to announce the publication of **Volume 12, Issue 2 (2026)** of UNILAG Communication Review.
+
+This issue features research on data costs and digital news stratification, religious broadcasting and public health, platform moderation in African languages, the editorial cartoon in Nigerian democracy, and media literacy in secondary education.
+
+All articles are freely available — browse the [current issue](/current).`,
     kind: "NEWS",
-    publishedAt: new Date("2026-05-15"),
+    publishedAt: new Date("2026-04-20"),
   },
   {
     id: "ann-3",
-    slug: "new-editorial-board-members",
-    title: "Welcome to our new Editorial Board members",
-    body: `The UNILAG Communication Review is delighted to welcome three new members to its Editorial Board for the 2026–2028 term. The new members bring expertise in digital journalism, platform governance, and health communication.\n\nThe full updated board list is available on our [Editorial Board](/editorial-board) page.`,
+    slug: "journal-indexing-update",
+    title: "Indexing and visibility update",
+    body: `As part of our commitment to global visibility, all articles published in UNILAG Communication Review now carry full bibliographic metadata for indexing services, including Google Scholar citation tags, DOIs, and OAI-PMH harvesting support for library aggregators.
+
+Authors can expect their published work to be discoverable through major academic search engines. Questions about indexing can be directed to the editorial office.`,
     kind: "NEWS",
-    publishedAt: new Date("2026-04-20"),
+    publishedAt: new Date("2026-02-10"),
   },
 ];
 
@@ -317,15 +337,12 @@ export interface DemoBoardMember {
 }
 
 export const DEMO_BOARD: DemoBoardMember[] = [
-  { id: "b1", name: "Prof. Lai Oso", role: "Editor-in-Chief", affiliation: "University of Lagos, Nigeria", orcid: "0000-0001-5555-1234", order: 0 },
-  { id: "b2", name: "Prof. Abiodun Salawu", role: "Editor", affiliation: "North-West University, South Africa", orcid: null, order: 1 },
-  { id: "b3", name: "Dr. Nkosi Ndlela", role: "Editor", affiliation: "Inland Norway University, Norway", orcid: null, order: 2 },
-  { id: "b4", name: "Prof. Herman Wasserman", role: "Member", affiliation: "University of Cape Town, South Africa", orcid: null, order: 3 },
-  { id: "b5", name: "Dr. Chioma Agwu", role: "Member", affiliation: "University of Nigeria, Nsukka", orcid: null, order: 4 },
-  { id: "b6", name: "Prof. Kwame Karikari", role: "Member", affiliation: "University of Ghana, Legon", orcid: null, order: 5 },
-  { id: "b7", name: "Dr. Aisha Lawan", role: "Member", affiliation: "Bayero University, Kano, Nigeria", orcid: null, order: 6 },
-  { id: "b8", name: "Prof. Winston Mano", role: "Member", affiliation: "University of Westminster, UK", orcid: null, order: 7 },
-  { id: "b9", name: "Dr. Tunde Akanni", role: "Member", affiliation: "Lagos State University, Nigeria", orcid: null, order: 8 },
+  { id: "b1", name: "Prof. Sunday Oloruntola", role: "Editor-in-Chief", affiliation: "University of Lagos, Nigeria", orcid: null, order: 1 },
+  { id: "b2", name: "Dr. Unwana Samuel Akpan", role: "Editor", affiliation: "University of Lagos, Nigeria", orcid: null, order: 2 },
+  { id: "b3", name: "Prof. Sunday Oloruntola", role: "Member", affiliation: "University of Lagos, Nigeria", orcid: null, order: 3 },
+  { id: "b4", name: "Prof. Adepoju Tejumaiye", role: "Member", affiliation: "University of Lagos, Nigeria", orcid: null, order: 4 },
+  { id: "b5", name: "Prof. Ishmael Ibrahim", role: "Member", affiliation: "University of Lagos, Nigeria", orcid: null, order: 5 },
+  { id: "b6", name: "Dr. Tayo Popoola", role: "Member", affiliation: "University of Lagos, Nigeria", orcid: null, order: 6 },
 ];
 
 // ─── Demo static pages ────────────────────────────────────────────────────────
@@ -363,83 +380,92 @@ For editorial enquiries, please contact: **ucr@unilag.edu.ng**`,
   {
     slug: "aims-scope",
     title: "Aims & Scope",
-    body: `# Aims and Scope
+    body: `UNILAG Communication Review is a peer-reviewed academic journal dedicated to advancing scholarly discourse in communication, media, and sociocultural studies. The journal provides a platform for rigorous research that examines the complex interplay between communication systems, media institutions, cultural practices, and societal dynamics.
 
-The *UNILAG Communication Review* publishes original scholarly work in the following areas:
+## Scope of Coverage
 
-- **Media and journalism studies** — including print, broadcast, and digital journalism
-- **Political communication** — including elections, government communication, and public opinion
-- **Digital media and platform studies** — including social media, algorithms, and platform governance
-- **Development communication** — including health, agriculture, and community communication
-- **Media law and policy** — including regulation, press freedom, and media ethics
-- **Cultural and popular media studies** — including film, music, and audience research
-- **Media history** — including colonial media, broadcasting history, and archival research
+The journal welcomes original research, theoretical explorations, and critical analyses across a broad spectrum of communication disciplines, including:
 
-We especially encourage submissions that address African media systems and contribute to communication theory from Global South perspectives.
+- **Media Studies**: Investigations into media institutions, practices, and their socio-cultural impacts, including journalism, broadcasting, film, and digital media.
+- **Communication Theory**: Theoretical frameworks and models that explain communication processes, effects, and meaning-making.
+- **Political Communication**: Analysis of political messaging, media-politics relationships, public opinion formation, and democratic processes.
+- **Health Communication**: Research on communication strategies and campaigns related to public health, medical contexts, and health behaviour change.
+- **Development Communication**: Studies examining the role of communication in social development, community engagement, and global inequalities.
+- **ICT and Digital Media**: Research on the impact of digital technologies, social media, and the internet on communication practices and society.
+- **Cross-cultural and International Communication**: Comparative studies of communication practices across cultures and nations, with a focus on global media flows.
+- **Advertising and Public Relations**: Analysis of persuasive communication, marketing strategies, and reputation management.
 
-## Article Types
+## Our Commitment
 
-- **Research Articles** (6,000–10,000 words): Empirical or theoretical contributions with original findings
-- **Review Articles** (6,000–10,000 words): Systematic reviews of existing scholarship
-- **Commentaries** (2,000–4,000 words): Informed opinion pieces on topical issues
-- **Book Reviews** (800–1,500 words): Critical assessments of recently published books`,
+UNILAG Communication Review is committed to publishing high-quality, impactful research that contributes to our understanding of communication in a rapidly changing world. We welcome submissions from scholars worldwide and particularly encourage research with relevance to African communication contexts and the Global South.`,
   },
   {
     slug: "submission-guidelines",
-    title: "Submission Guidelines",
-    body: `# Submission Guidelines
+    title: "Submission Guidelines for Authors",
+    body: `To ensure a smooth review process, authors must adhere to the following guidelines:
 
-Please read these guidelines carefully before submitting to the *UNILAG Communication Review*.
+- **Word Limit:** Articles must not exceed **6,000 words** (including references).
+- **Referencing Style:** Use **APA 7th Edition** formatting.
+- **Font & Layout:** 12-point Times New Roman, double-spaced, with standard margins.
+- **Compliance:** Submissions that do not follow these guidelines will be automatically rejected.
 
-## Eligibility
+## Preparing Your Submission
 
-All submissions must be:
+Because UNILAG Communication Review uses double-blind peer review, you must upload **two separate files**:
 
-- Original and not under consideration elsewhere
-- Written in English
-- Between 6,000 and 10,000 words (research/review articles) or 2,000–4,000 words (commentaries)
-- Formatted in APA 7th edition
+1. **Anonymized manuscript** — the full article with all author names, affiliations, acknowledgements, and self-identifying citations removed.
+2. **Title page** — a separate document containing the article title, all author names, affiliations, ORCID iDs (where available), and the corresponding author's email address.
 
-## Manuscript Preparation
+## Submission Checklist
 
-1. **Title page** (separate file): Title, all author names, affiliations, ORCID iDs, corresponding author contact
-2. **Anonymous manuscript** (main file): Title only — no author names, affiliations, or acknowledgements that could identify the authors
-3. **Abstract**: 150–250 words
-4. **Keywords**: 4–6 keywords
-5. **References**: APA 7th edition
+Before submitting, please confirm that:
 
-## Submission Process
+- The manuscript is original, unpublished, and not under consideration elsewhere.
+- The manuscript does not exceed 6,000 words including references.
+- All references follow APA 7th Edition.
+- The manuscript file contains no author-identifying information.
+- An abstract of 150–250 words and 4–6 keywords are included.
+- You acknowledge the publication fee of ₦30,000, payable upon acceptance.
 
-Submit via the [author dashboard](/dashboard/submissions/new). You will need to create an account first.
-
-## Publication Fee
-
-A publication fee of ₦30,000 applies upon acceptance. Fee waivers are available for authors without institutional funding — contact the editor.`,
+Ready to contribute to leading communication scholarship? [Create an account and submit your manuscript](/register) to join a community of distinguished researchers shaping the future of media and communication studies.`,
   },
   {
     slug: "peer-review",
     title: "Peer Review Process",
-    body: `# Peer Review Process
+    body: `UNILAG Communication Review maintains a **double-blind peer review** system to ensure fairness and academic rigor. Each submission is evaluated by:
 
-The *UNILAG Communication Review* operates a **double-blind peer review** process. Neither authors nor reviewers know each other's identities.
+1. **The Editorial Team** for initial screening — checking scope fit, originality, and compliance with submission guidelines.
+2. **At least two anonymous referees** with expertise in the relevant field.
 
-## Process
+This stringent process guarantees that only high-quality, original, and impactful research is published.
 
-1. **Submission** — Author submits anonymised manuscript
-2. **Desk review** — Editor-in-Chief checks scope fit and basic quality (1–2 weeks)
-3. **Reviewer assignment** — Two qualified reviewers are invited (1–3 weeks)
-4. **Review** — Reviewers submit evaluations within 4 weeks
-5. **Decision** — Editor communicates decision: Accept, Minor Revisions, Major Revisions, or Reject
-6. **Revision** — Authors respond to reviewer comments
-7. **Final decision** — Editor makes final accept/reject decision
-8. **Production** — Accepted articles enter copyediting and typesetting
+## What to Expect
 
-## Reviewer Decisions
+- **Initial screening:** within 2 weeks of submission. Manuscripts outside the journal's scope or not meeting the guidelines are returned without external review.
+- **Peer review:** reviewers are asked to return reports within 4–6 weeks. Reviewer identities are never disclosed to authors, and author identities are never disclosed to reviewers.
+- **Decision:** the Editor communicates one of four decisions — Accept, Minor Revisions, Major Revisions, or Reject — together with anonymized reviewer reports.
+- **Revisions:** revised manuscripts must be accompanied by a point-by-point response to reviewers and may be returned to the original referees.
 
-- **Accept**: Published as submitted (minor corrections only)
-- **Minor Revisions**: Small changes required; re-review at editor's discretion
-- **Major Revisions**: Substantial revision required; re-sent to reviewers
-- **Reject**: Manuscript declined`,
+## Reviewer Recognition
+
+Our reviewers are active scholars in communication, media, and sociocultural studies. We gratefully acknowledge their contribution to maintaining the journal's standards.`,
+  },
+  {
+    slug: "publication-fee",
+    title: "Publication Fee",
+    body: `To support the peer review and online publication process, authors are required to pay a **non-refundable fee of thirty thousand Naira (₦30,000) per article**. This fee ensures rigorous editorial handling, professional typesetting, and long-term digital archiving of your work.
+
+## How to Pay
+
+Payment is made by bank transfer after your article has been accepted for publication. Bank account details and a payment reference will be sent to the corresponding author together with the acceptance letter.
+
+After payment, forward your proof of payment (deposit slip or transfer receipt) to the editorial office by replying to the acceptance email. The editorial team will confirm receipt of your payment before your article moves into production.
+
+**Please note:**
+
+- The fee covers peer review administration, copyediting, typesetting, DOI registration, and online archiving.
+- No fee is charged at the point of submission — payment is requested only after acceptance.
+- The fee is non-refundable once the article enters production.`,
   },
   {
     slug: "ethics",
@@ -515,25 +541,6 @@ To submit a manuscript, please use the [author submission portal](/dashboard/sub
 ## Review Enquiries
 
 Authors may enquire about the status of their submission by emailing the editorial office with their submission reference number.`,
-  },
-  {
-    slug: "publication-fee",
-    title: "Publication Fee",
-    body: `# Publication Fee
-
-## Fee Structure
-
-A publication processing fee of **₦30,000** (thirty thousand naira) applies to articles accepted for publication. The fee covers copyediting, typesetting, DOI registration, and long-term digital archiving.
-
-**No fee is charged at submission.** The fee is only payable after an article has been accepted following peer review.
-
-## Payment Process
-
-Upon acceptance, the corresponding author will receive a payment instruction email. Payment should be made via bank transfer to the Faculty of Communication and Media Studies designated account. Proof of payment must be uploaded through the author dashboard.
-
-## Fee Waivers
-
-The journal is committed to accessibility. Authors without institutional or grant funding may apply for a full or partial waiver by emailing the editor-in-chief at the time of submission. Waiver decisions are made independently of the editorial process.`,
   },
   {
     slug: "archiving",
