@@ -56,7 +56,7 @@ export default async function HomePage({
           <div className="mt-4 grid gap-6 sm:grid-cols-[200px_1fr]">
             <Link
               href={`/issues/${currentIssue.volumeNumber}/${currentIssue.number}`}
-              aria-label={`Browse Volume ${currentIssue.volumeNumber}, Issue ${currentIssue.number}`}
+              aria-label={`Browse Volume ${currentIssue.volumeNumber}, Number ${currentIssue.number}`}
             >
               <IssueCover
                 volume={currentIssue.volumeNumber}
@@ -79,7 +79,7 @@ export default async function HomePage({
                 )}
               </div>
               <h2 className="font-display text-2xl font-semibold leading-snug text-ink sm:text-3xl">
-                {currentIssue.title ?? `Volume ${currentIssue.volumeNumber}, Issue ${currentIssue.number} (${currentIssue.volumeYear})`}
+                {currentIssue.title ?? `Volume ${currentIssue.volumeNumber}, Number ${currentIssue.number} (${currentIssue.volumeYear})`}
               </h2>
               <p className="mt-1 font-serif text-sm text-secondary">
                 Volume {currentIssue.volumeNumber}, Number {currentIssue.number} ({currentIssue.volumeYear}) · Published {format(currentIssue.publishedAt, "d MMMM yyyy")} · {currentIssue.articleCount} articles

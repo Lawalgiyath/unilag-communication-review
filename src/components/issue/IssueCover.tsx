@@ -39,7 +39,7 @@ export function IssueCover({
         {volume}
       </span>
       <span className="mt-1 text-[11px] uppercase tracking-[0.18em] text-paper/85">
-        Issue {issue} · {year}
+        Number {issue} · {year}
       </span>
       {publishedAt && size !== "sm" && (
         <span className="mt-2 text-[10px] uppercase tracking-[0.14em] text-paper/60">

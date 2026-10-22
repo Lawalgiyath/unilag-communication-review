@@ -45,7 +45,7 @@ export default function ArchivesPage() {
                     />
                     <div className="px-3 py-2.5">
                       <p className="text-sm font-semibold text-ink">
-                        Issue {issue.number}
+                        Number {issue.number}
                       </p>
                       {issue.title && (
                         <p className="mt-0.5 line-clamp-2 text-xs font-serif italic text-ink/80">

@@ -23,8 +23,8 @@ export async function generateMetadata({
   const data = getIssue(Number(volume), Number(issue));
   if (!data) return { title: "Issue not found" };
   return {
-    title: `Volume ${data.volumeNumber}, Issue ${data.number} (${data.volumeYear})`,
-    description: `Table of contents for ${JOURNAL.title}, Volume ${data.volumeNumber}, Issue ${data.number} (${data.volumeYear}).`,
+    title: `Volume ${data.volumeNumber}, Number ${data.number} (${data.volumeYear})`,
+    description: `Table of contents for ${JOURNAL.title}, Volume ${data.volumeNumber}, Number ${data.number} (${data.volumeYear}).`,
   };
 }
 
@@ -43,7 +43,7 @@ export default async function IssuePage({
         <Link href="/archives" className="hover:text-maroon">
           Archives
         </Link>{" "}
-        / Volume {data.volumeNumber} / Issue {data.number}
+        / Volume {data.volumeNumber} / Number {data.number}
       </nav>
 
       <div className="mt-6 grid gap-8 sm:grid-cols-[220px_1fr]">
@@ -76,10 +76,10 @@ export default async function IssuePage({
             </div>
           )}
           <h1 className="font-display text-3xl font-semibold leading-snug text-ink sm:text-4xl">
-            {data.title ?? `Volume ${data.volumeNumber}, Issue ${data.number} (${data.volumeYear})`}
+            {data.title ?? `Volume ${data.volumeNumber}, Number ${data.number} (${data.volumeYear})`}
           </h1>
           <p className="mt-2 text-sm text-secondary">
-            Volume {data.volumeNumber}, Issue {data.number} ({data.volumeYear}) · Published {format(data.publishedAt, "d MMMM yyyy")} ·{" "}
+            Volume {data.volumeNumber}, Number {data.number} ({data.volumeYear}) · Published {format(data.publishedAt, "d MMMM yyyy")} ·{" "}
             {data.articleCount} articles · ISSN {JOURNAL.issn}
           </p>
 

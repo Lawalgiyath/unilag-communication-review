@@ -54,7 +54,7 @@ export default async function DoiAssignerPage() {
     lastPage: a.lastPage,
     doi: a.doi,
     authors: a.authors,
-    issueTitle: a.issue?.title || `Issue ${a.issue?.number || 2}`,
+    issueTitle: a.issue?.title || `Number ${a.issue?.number || 2}`,
     volumeNumber: a.issue?.volume.number || 9,
     issueNumber: a.issue?.number || 2,
   }));

@@ -51,10 +51,10 @@ export default function CurrentPage() {
             </div>
           )}
           <h1 className="font-display text-3xl font-semibold leading-snug text-ink sm:text-4xl">
-            {data.title ?? `Volume ${data.volumeNumber}, Issue ${data.number} (${data.volumeYear})`}
+            {data.title ?? `Volume ${data.volumeNumber}, Number ${data.number} (${data.volumeYear})`}
           </h1>
           <p className="mt-2 text-sm text-secondary">
-            Volume {data.volumeNumber}, Issue {data.number} ({data.volumeYear}) · Published {format(data.publishedAt, "d MMMM yyyy")} ·{" "}
+            Volume {data.volumeNumber}, Number {data.number} ({data.volumeYear}) · Published {format(data.publishedAt, "d MMMM yyyy")} ·{" "}
             {data.articleCount} articles · ISSN {JOURNAL.issn}
           </p>
 

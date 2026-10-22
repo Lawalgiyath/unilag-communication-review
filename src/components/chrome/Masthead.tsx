@@ -15,14 +15,12 @@ export function Masthead() {
               Platforms, Power, and Polls: Perspectives Ahead of Nigeria’s 2027 General Elections
             </span>
           </div>
-          <div className="flex items-center gap-2 font-display text-[11px] font-semibold uppercase tracking-wider text-maroon">
-            <span>Volume 9 Number 2</span>
-            <span className="text-secondary">·</span>
+          <div className="flex items-center font-display text-xs font-bold uppercase tracking-wider">
             <Link
               href="/current"
-              className="text-xs font-semibold text-maroon underline decoration-hairline underline-offset-2 hover:decoration-maroon"
+              className="text-maroon hover:text-oxblood hover:underline"
             >
-              Current Issue →
+              Volume 9 Number 2
             </Link>
           </div>
         </div>
