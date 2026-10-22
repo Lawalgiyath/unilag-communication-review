@@ -79,6 +79,9 @@ export default async function DashboardLayout({
             <Link href="/dashboard/editor/board" className="sidebar-nav-link">Board</Link>
             <Link href="/dashboard/editor/pages" className="sidebar-nav-link">Pages (CMS)</Link>
             <Link href="/dashboard/editor/announcements" className="sidebar-nav-link">Announcements</Link>
+            <Link href="/dashboard/editor/doi" className="sidebar-nav-link">
+              <span className="font-semibold text-gold">DOI Assigner</span>
+            </Link>
             <Link href="/dashboard/editor/settings" className="sidebar-nav-link">Settings</Link>
           </div>
         )}

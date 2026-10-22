@@ -6,7 +6,12 @@ export const metadata: Metadata = {
   description: "Meet the editors and board members of UNILAG Communication Review.",
 };
 
-const ROLE_ORDER = ["Editor-in-Chief", "Editor", "Member"];
+const ROLE_ORDER = [
+  "Special Issue Guest Editor",
+  "Editor-in-Chief",
+  "Editor",
+  "Member",
+];
 
 export default function EditorialBoardPage() {
   const grouped = ROLE_ORDER.map((role) => ({

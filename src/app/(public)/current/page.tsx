@@ -31,17 +31,30 @@ export default function CurrentPage() {
             year={data.volumeYear}
             publishedAt={data.publishedAt}
             size="lg"
+            isSpecialIssue={!!data.title}
           />
           <p className="mt-3 border border-gold px-2 py-1 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-gold-dark">
             Current Issue
           </p>
         </div>
         <div>
-          <h1 className="font-display text-3xl font-semibold text-ink">
-            Volume {data.volumeNumber}, Issue {data.number} ({data.volumeYear})
+          {data.title && (
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className="border border-gold/80 bg-gold/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-gold-dark">
+                Special Issue
+              </span>
+              {data.guestEditor && (
+                <span className="text-xs text-secondary">
+                  Guest Editor: <strong className="font-medium text-ink">{data.guestEditor}</strong>
+                </span>
+              )}
+            </div>
+          )}
+          <h1 className="font-display text-3xl font-semibold leading-snug text-ink sm:text-4xl">
+            {data.title ?? `Volume ${data.volumeNumber}, Issue ${data.number} (${data.volumeYear})`}
           </h1>
           <p className="mt-2 text-sm text-secondary">
-            Published {format(data.publishedAt, "d MMMM yyyy")} ·{" "}
+            Volume {data.volumeNumber}, Issue {data.number} ({data.volumeYear}) · Published {format(data.publishedAt, "d MMMM yyyy")} ·{" "}
             {data.articleCount} articles · ISSN {JOURNAL.issn}
           </p>
 

@@ -15,7 +15,7 @@ export const JOURNAL = {
   contactEmail: "ucr@unilag.edu.ng",
   tagline: "Where Excellence Meets Impact",
   feeNaira: "30,000",
-  doiPrefix: "10.XXXX",
+  doiPrefix: "10.5281/zenodo",
 } as const;
 
 export function siteUrl(): string {

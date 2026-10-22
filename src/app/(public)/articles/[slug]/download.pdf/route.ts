@@ -10,18 +10,24 @@ export async function GET(
 ) {
   const { slug } = await params;
 
-  const article = await db.article.findFirst({
-    where: { slug, status: "PUBLISHED" },
-    include: { pdfFile: true },
-  });
+  let filename = `${slug}.pdf`;
 
-  if (!article || !article.pdfFile) {
-    notFound();
+  try {
+    const article = await db.article.findFirst({
+      where: { slug, status: "PUBLISHED" },
+      include: { pdfFile: true },
+    });
+
+    if (article?.pdfFile?.filename) {
+      filename = article.pdfFile.filename;
+    }
+  } catch {
+    // Fall back to filename on disk
   }
 
   const response = await fileResponse({
     kind: "TYPESET_PDF",
-    filename: article.pdfFile.filename,
+    filename,
     mimeType: "application/pdf",
     downloadName: `${slug}.pdf`,
     inline: true,

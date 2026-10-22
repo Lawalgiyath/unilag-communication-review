@@ -41,12 +41,18 @@ export default function ArchivesPage() {
                       issue={issue.number}
                       year={volume.year}
                       publishedAt={issue.publishedAt}
+                      isSpecialIssue={!!issue.title}
                     />
                     <div className="px-3 py-2.5">
                       <p className="text-sm font-semibold text-ink">
                         Issue {issue.number}
                       </p>
-                      <p className="mt-0.5 text-xs text-secondary">
+                      {issue.title && (
+                        <p className="mt-0.5 line-clamp-2 text-xs font-serif italic text-ink/80">
+                          {issue.title}
+                        </p>
+                      )}
+                      <p className="mt-1 text-xs text-secondary">
                         {format(issue.publishedAt, "MMMM yyyy")} · {issue.articleCount} articles
                       </p>
                     </div>

@@ -33,13 +33,24 @@ const MARGIN = 54;
 const BODY_SIZE = 11;
 const BODY_LEADING = 15;
 
+function cleanWinAnsi(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/[\u2026]/g, "...")
+    .replace(/[^\x20-\x7E\xA0-\xFF]/g, " ");
+}
+
 function wrapText(
   text: string,
   font: PDFFont,
   size: number,
   maxWidth: number
 ): string[] {
-  const words = text.split(/\s+/).filter(Boolean);
+  const safeText = cleanWinAnsi(text);
+  const words = safeText.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let line = "";
   for (const word of words) {
@@ -178,7 +189,7 @@ export async function makeSeedPdf(input: SeedPdfInput): Promise<Uint8Array> {
     if (para.startsWith("## ")) {
       ensureSpace(30);
       y -= 6;
-      page.drawText(para.slice(3), {
+      page.drawText(cleanWinAnsi(para.slice(3)), {
         x: MARGIN,
         y,
         size: 13,

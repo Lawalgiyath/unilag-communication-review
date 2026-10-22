@@ -64,19 +64,28 @@ export default async function HomePage({
                 year={currentIssue.volumeYear}
                 publishedAt={currentIssue.publishedAt}
                 size="lg"
+                isSpecialIssue={!!currentIssue.title}
               />
             </Link>
             <div>
-              <h2 className="font-display text-2xl font-semibold text-ink">
-                Volume {currentIssue.volumeNumber}, Issue{" "}
-                {currentIssue.number} ({currentIssue.volumeYear})
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className="border border-gold/80 bg-gold/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-gold-dark">
+                  Special Issue
+                </span>
+                {currentIssue.guestEditor && (
+                  <span className="text-xs text-secondary">
+                    Guest Editor: <strong className="font-medium text-ink">{currentIssue.guestEditor}</strong>
+                  </span>
+                )}
+              </div>
+              <h2 className="font-display text-2xl font-semibold leading-snug text-ink sm:text-3xl">
+                {currentIssue.title ?? `Volume ${currentIssue.volumeNumber}, Issue ${currentIssue.number} (${currentIssue.volumeYear})`}
               </h2>
-              <p className="mt-1 text-sm text-secondary">
-                Published {format(currentIssue.publishedAt, "d MMMM yyyy")} ·{" "}
-                {currentIssue.articleCount} articles
+              <p className="mt-1 font-serif text-sm text-secondary">
+                Volume {currentIssue.volumeNumber}, Number {currentIssue.number} ({currentIssue.volumeYear}) · Published {format(currentIssue.publishedAt, "d MMMM yyyy")} · {currentIssue.articleCount} articles
               </p>
-              <div className="mt-3">
-                {currentIssue.articles.slice(0, 3).map((a) => (
+              <div className="mt-4">
+                {currentIssue.articles.slice(0, 5).map((a) => (
                   <ArticleListItem key={a.id} article={toListItem(a)} />
                 ))}
               </div>
@@ -233,7 +242,7 @@ export default async function HomePage({
             <span id="indexing-heading">Indexing &amp; Discovery</span>
           </SectionLabel>
           <ul className="mt-3 flex flex-wrap gap-2">
-            {["Google Scholar", "Crossref DOI", "OAI-PMH", "RSS", "Unilag repository"].map((s) => (
+            {["Zenodo DOI", "Google Scholar", "Crossref", "OAI-PMH", "RSS Feed", "UNILAG Repository"].map((s) => (
               <li
                 key={s}
                 className="border border-hairline px-2.5 py-1 text-xs font-medium text-secondary"

@@ -138,6 +138,7 @@ export default async function ArticlePage({
       {/* Header */}
       <header className="mt-4">
         <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="gold">Special Issue</Badge>
           <Badge variant="maroon">{articleTypeLabel(article.articleType)}</Badge>
           <Badge variant="gold">Open Access</Badge>
           <Badge variant="neutral">Peer-Reviewed</Badge>
@@ -192,6 +193,8 @@ export default async function ArticlePage({
               <dd className="mt-0.5">
                 <a
                   href={`https://doi.org/${article.doi}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="print-doi break-all text-maroon underline decoration-hairline underline-offset-2 hover:decoration-maroon"
                 >
                   {article.doi}
@@ -203,6 +206,27 @@ export default async function ArticlePage({
 
         {/* Actions */}
         <div className="no-print mt-5 flex flex-wrap items-center gap-3">
+          <a
+            href={`/articles/${article.slug}/download.pdf`}
+            download={`${article.slug}.pdf`}
+            className="inline-flex items-center gap-2 bg-maroon px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-paper hover:bg-oxblood transition-colors shadow-sm"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            Download PDF
+          </a>
           <CiteModal citations={citations} slug={article.slug} />
         </div>
       </header>

@@ -4,9 +4,13 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { makeSeedPdf } from "../scripts/make-seed-pdfs";
 import {
+  REAL_ARTICLES,
   SEED_ARTICLES,
   buildBodyParagraphs,
-  pickReferences,
+  SPECIAL_ISSUE_TITLE,
+  SPECIAL_ISSUE_VOLUME,
+  SPECIAL_ISSUE_NUMBER,
+  SPECIAL_ISSUE_YEAR,
 } from "./seed-data";
 
 const db = new PrismaClient();
@@ -27,11 +31,11 @@ function slugify(text: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .split("-")
-    .slice(0, 8)
+    .slice(0, 10)
     .join("-");
 }
 
-// ============ Static page content (from the requirements document) ============
+// ============ Static page content ============
 
 const PAGES: { slug: string; title: string; body: string }[] = [
   {
@@ -208,101 +212,91 @@ Akoka-Lagos, Nigeria
 
 ## Editorial Enquiries
 
-For questions about the status of a submission, the review process, or the suitability of a manuscript for the journal, please contact the editorial office by email, quoting your submission number (e.g. UCR-2026-0012) where applicable.
+For questions about the status of a submission, the review process, or the suitability of a manuscript for the journal, please contact the editorial office by email, quoting your submission number where applicable.
 
 ## Technical Support
 
-For problems with the online submission system, password resets, or file upload issues, contact the editorial office with a description of the problem and a screenshot where possible.`,
+For problems with the online submission system, password resets, or file upload issues, contact the editorial office with a description of the problem.`,
   },
 ];
 
 const BOARD = [
   {
-    name: "Prof. Sunday Oloruntola",
-    role: "Editor-in-Chief",
-    affiliation: "University of Lagos, Nigeria",
+    name: "Dr. Bisi Crown Olawuyi",
+    role: "Special Issue Guest Editor",
+    affiliation: "Department of Communication and Language Arts, University of Ibadan, Nigeria",
     order: 1,
+  },
+  {
+    name: "Prof. Oloruntola Sunday",
+    role: "Editor-in-Chief",
+    affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
+    order: 2,
   },
   {
     name: "Dr. Unwana Samuel Akpan",
     role: "Editor",
-    affiliation: "University of Lagos, Nigeria",
-    order: 2,
-  },
-  {
-    name: "Prof. Sunday Oloruntola",
-    role: "Member",
-    affiliation: "University of Lagos, Nigeria",
+    affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
     order: 3,
   },
   {
     name: "Prof. Adepoju Tejumaiye",
     role: "Member",
-    affiliation: "University of Lagos, Nigeria",
+    affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
     order: 4,
   },
   {
-    name: "Prof. Ishmael Ibrahim",
+    name: "Prof. Ismail Ibraheem",
     role: "Member",
-    affiliation: "University of Lagos, Nigeria",
+    affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
     order: 5,
   },
   {
-    name: "Dr. Tayo Popoola",
+    name: "Prof. Popoola Ibitayo Samuel",
     role: "Member",
-    affiliation: "University of Lagos, Nigeria",
+    affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
     order: 6,
   },
 ];
 
 const ANNOUNCEMENTS = [
   {
-    slug: "call-for-papers-vol-13",
-    title: "Call for Papers — Volume 13 (2027): Communication, AI and African Futures",
-    kind: "CALL_FOR_PAPERS",
-    publishedAt: new Date("2026-05-02"),
-    body: `UNILAG Communication Review invites submissions for **Volume 13 (2027)**, with a special focus on **Communication, Artificial Intelligence, and African Futures**.
+    slug: "special-issue-vol-9-no-2-published",
+    title: "Special Issue Published: Platforms, Power, and Polls: Perspectives Ahead of Nigeria’s 2027 General Elections",
+    kind: "NEWS",
+    publishedAt: new Date("2026-10-22"),
+    body: `The Faculty of Communication and Media Studies, University of Lagos, is proud to announce the publication of **Volume 9, Number 2 (2026)** — our Special Issue titled **Platforms, Power, and Polls: Perspectives Ahead of Nigeria’s 2027 General Elections**.
 
-We welcome original research articles, review articles, and commentaries addressing themes including (but not limited to):
+Guest Edited by **Dr. Bisi Crown Olawuyi** (University of Ibadan), with Editor **Dr. Unwana Samuel Akpan** and Editor-in-Chief **Prof. Oloruntola Sunday**, this special issue features 10 peer-reviewed research articles addressing youth digital activism, electoral credibility, real-time result transmission, broadcast journalism, musical satire, and artificial intelligence in Nigerian politics.
 
-- Generative AI in African newsrooms and creative industries
-- Algorithmic governance, moderation, and African languages
-- AI, misinformation, and electoral integrity
-- Data justice and digital rights in the Global South
-- Indigenous knowledge systems and machine learning
-
-**Submission deadline:** 31 October 2026
-
-Manuscripts must not exceed 6,000 words (including references), formatted in APA 7th Edition, 12-point Times New Roman, double-spaced. All submissions undergo double-blind peer review.
-
-Submit through the journal's online submission system. General submissions outside the special focus remain welcome on a rolling basis.`,
+All articles are published open access with official Zenodo DOIs and available for immediate reading and PDF download. Browse the [Current Issue](/current) to access the table of contents.`,
   },
   {
-    slug: "vol-12-issue-2-published",
-    title: "Volume 12, Issue 2 (2026) now online",
-    kind: "NEWS",
-    publishedAt: new Date("2026-04-20"),
-    body: `We are delighted to announce the publication of **Volume 12, Issue 2 (2026)** of UNILAG Communication Review.
+    slug: "call-for-papers-vol-10",
+    title: "Call for Papers — Volume 10: Communication, AI and African Futures",
+    kind: "CALL_FOR_PAPERS",
+    publishedAt: new Date("2026-10-15"),
+    body: `UNILAG Communication Review invites submissions for our upcoming volume, with a special focus on **Communication, Artificial Intelligence, and African Futures**.
 
-This issue features research on data costs and digital news stratification, religious broadcasting and public health, platform moderation in African languages, the editorial cartoon in Nigerian democracy, and media literacy in secondary education.
+We welcome original research articles, review articles, and commentaries. All submissions undergo double-blind peer review.
 
-All articles are freely available — browse the [current issue](/current).`,
+Submit through the journal's online submission portal. General submissions outside the special focus remain welcome on a rolling basis.`,
   },
   {
     slug: "journal-indexing-update",
-    title: "Indexing and visibility update",
+    title: "Indexing and Digital Visibility Update",
     kind: "NEWS",
-    publishedAt: new Date("2026-02-10"),
-    body: `As part of our commitment to global visibility, all articles published in UNILAG Communication Review now carry full bibliographic metadata for indexing services, including Google Scholar citation tags, DOIs, and OAI-PMH harvesting support for library aggregators.
+    publishedAt: new Date("2026-10-10"),
+    body: `As part of our commitment to global visibility, all articles published in UNILAG Communication Review now carry full bibliographic metadata for indexing services, including Google Scholar citation tags, Zenodo DOIs, and OAI-PMH harvesting support for library aggregators worldwide.
 
-Authors can expect their published work to be discoverable through major academic search engines. Questions about indexing can be directed to the editorial office.`,
+Authors can expect their published work to be discoverable through major academic search engines and international indexes.`,
   },
 ];
 
 // ============ Seeding ============
 
 async function main() {
-  console.log("Seeding database…");
+  console.log("Seeding database with real faculty data…");
 
   // ---- wipe (idempotent reseeding) ----
   await db.$transaction([
@@ -331,8 +325,20 @@ async function main() {
     db.userRole.deleteMany(),
     db.user.deleteMany(),
   ]);
-  await db.$executeRawUnsafe(`DELETE FROM article_fts`);
-  await db.$executeRawUnsafe(`DELETE FROM article_fts_map`);
+  await db.$executeRawUnsafe(`DROP TABLE IF EXISTS article_fts`);
+  await db.$executeRawUnsafe(`DROP TABLE IF EXISTS article_fts_map`);
+  await db.$executeRawUnsafe(`
+    CREATE VIRTUAL TABLE article_fts USING fts5(
+      title, abstract, authors, keywords,
+      content='', tokenize='porter unicode61'
+    )
+  `);
+  await db.$executeRawUnsafe(`
+    CREATE TABLE article_fts_map (
+      rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+      article_id TEXT UNIQUE NOT NULL
+    )
+  `);
 
   // ---- settings ----
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -371,7 +377,7 @@ async function main() {
         email,
         name,
         passwordHash,
-        affiliation: extra.affiliation ?? "University of Lagos, Nigeria",
+        affiliation: extra.affiliation ?? "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
         title: extra.title,
         orcid: extra.orcid,
         roles: { create: roles.map((role) => ({ role })) },
@@ -385,72 +391,79 @@ async function main() {
   );
   const editorInChief = await mkUser(
     "oloruntola@unilag.edu.ng",
-    "Sunday Oloruntola",
+    "Prof. Oloruntola Sunday",
     ["EDITOR", "REVIEWER"],
     { title: "Prof." }
   );
   const editor = await mkUser(
     "uakpan@unilag.edu.ng",
-    "Unwana Samuel Akpan",
+    "Dr. Unwana Samuel Akpan",
     ["EDITOR", "REVIEWER"],
     { title: "Dr." }
   );
-  const reviewer1 = await mkUser(
+  const guestEditor = await mkUser(
+    "bisi.olawuyi@ui.edu.ng",
+    "Dr. Bisi Crown Olawuyi",
+    ["EDITOR", "REVIEWER"],
+    { title: "Dr.", affiliation: "Department of Communication and Language Arts, University of Ibadan, Nigeria" }
+  );
+  await mkUser(
     "tejumaiye@unilag.edu.ng",
-    "Adepoju Tejumaiye",
+    "Prof. Adepoju Tejumaiye",
     ["REVIEWER"],
     { title: "Prof." }
   );
-  const reviewer2 = await mkUser(
-    "ibrahim@unilag.edu.ng",
-    "Ishmael Ibrahim",
+  await mkUser(
+    "ibraheem@unilag.edu.ng",
+    "Prof. Ismail Ibraheem",
     ["REVIEWER"],
     { title: "Prof." }
   );
-  const reviewer3 = await mkUser(
+  await mkUser(
     "popoola@unilag.edu.ng",
-    "Tayo Popoola",
+    "Prof. Popoola Ibitayo Samuel",
     ["REVIEWER"],
-    { title: "Dr." }
-  );
-  const author1 = await mkUser(
-    "adaeze.okafor@example.edu.ng",
-    "Adaeze Okafor",
-    ["AUTHOR"],
-    { orcid: "0000-0002-1825-0097" }
-  );
-  const author2 = await mkUser(
-    "tunde.bakare@example.edu.ng",
-    "Tunde Bakare",
-    ["AUTHOR"],
-    { affiliation: "Lagos State University, Nigeria" }
-  );
-  const author3 = await mkUser(
-    "ngozi.chukwu@example.edu.ng",
-    "Ngozi Chukwu",
-    ["AUTHOR"],
-    { affiliation: "University of Nigeria, Nsukka" }
+    { title: "Prof." }
   );
 
-  // ---- volumes, issues, articles ----
-  const issueDefs = [
-    { volume: 10, year: 2024, issue: 1, published: new Date("2024-04-15") },
-    { volume: 10, year: 2024, issue: 2, published: new Date("2024-10-20") },
-    { volume: 11, year: 2025, issue: 1, published: new Date("2025-04-18") },
-    { volume: 11, year: 2025, issue: 2, published: new Date("2025-10-22") },
-    { volume: 12, year: 2026, issue: 1, published: new Date("2026-01-25") },
-    { volume: 12, year: 2026, issue: 2, published: new Date("2026-04-20") },
-  ];
-
-  const volumes = new Map<number, string>();
-  for (const def of issueDefs) {
-    if (!volumes.has(def.volume)) {
-      const v = await db.volume.create({
-        data: { number: def.volume, year: def.year },
-      });
-      volumes.set(def.volume, v.id);
+  // Author accounts for corresponding authors of real articles
+  const authorAccounts = new Map<string, string>();
+  for (const art of REAL_ARTICLES) {
+    const corr = art.authors.find((a) => a.corresponding) ?? art.authors[0];
+    const email = corr.email || `${corr.first.toLowerCase().replace(/[^a-z]/g, "")}@example.edu.ng`;
+    if (!authorAccounts.has(email)) {
+      const u = await mkUser(
+        email,
+        `${corr.first} ${corr.last}`,
+        ["AUTHOR"],
+        {
+          title: corr.title || undefined,
+          affiliation: corr.affiliation,
+          orcid: corr.orcid || undefined,
+        }
+      );
+      authorAccounts.set(email, u.id);
     }
   }
+
+  // ---- Volume & Issue (Volume 9, Number 2 - Special Issue) ----
+  const volume = await db.volume.create({
+    data: {
+      number: SPECIAL_ISSUE_VOLUME,
+      year: SPECIAL_ISSUE_YEAR,
+    },
+  });
+
+  const issue = await db.issue.create({
+    data: {
+      volumeId: volume.id,
+      number: SPECIAL_ISSUE_NUMBER,
+      title: SPECIAL_ISSUE_TITLE,
+      publishedAt: new Date("2026-10-22"),
+      isCurrent: true,
+      coverBlurb: "Platforms, Power, and Polls: Perspectives Ahead of Nigeria’s 2027 General Elections. Guest Editor: Dr. Bisi Crown Olawuyi.",
+    },
+  });
 
   const pdfDir = path.resolve(
     process.cwd(),
@@ -459,401 +472,150 @@ async function main() {
   );
   await mkdir(pdfDir, { recursive: true });
 
-  let globalIdx = 0;
-  for (let i = 0; i < issueDefs.length; i++) {
-    const def = issueDefs[i];
-    const isCurrent = i === issueDefs.length - 1;
-    const issue = await db.issue.create({
+  console.log(`Generating typeset PDFs and seeding ${REAL_ARTICLES.length} articles for Volume 9 Number 2…`);
+
+  for (let j = 0; j < REAL_ARTICLES.length; j++) {
+    const art = REAL_ARTICLES[j];
+    const slug = art.slug || slugify(art.title);
+    const doi = art.doi;
+    const firstPage = art.firstPage;
+    const lastPage = art.lastPage;
+    const refs = art.references;
+
+    // generate PDF with real text
+    const pdfBytes = await makeSeedPdf({
+      title: art.title,
+      authors: art.authors.map((a) => (a.title ? `${a.title} ${a.first} ${a.last}` : `${a.first} ${a.last}`)),
+      journalTitle: JOURNAL_TITLE,
+      issn: ISSN,
+      volume: SPECIAL_ISSUE_VOLUME,
+      issue: SPECIAL_ISSUE_NUMBER,
+      year: SPECIAL_ISSUE_YEAR,
+      firstPage,
+      lastPage,
+      doi,
+      abstract: art.abstract,
+      keywords: art.keywords,
+      bodyParagraphs: buildBodyParagraphs(art),
+      references: refs,
+    });
+    const pdfFilename = `${slug}.pdf`;
+    await writeFile(path.join(pdfDir, pdfFilename), pdfBytes);
+
+    const corr = art.authors.find((a) => a.corresponding) ?? art.authors[0];
+    const corrEmail = corr.email || `${corr.first.toLowerCase().replace(/[^a-z]/g, "")}@example.edu.ng`;
+    const corrUserId = authorAccounts.get(corrEmail) ?? admin.id;
+
+    const storedFile = await db.storedFile.create({
       data: {
-        volumeId: volumes.get(def.volume)!,
-        number: def.issue,
-        publishedAt: def.published,
-        isCurrent,
+        filename: pdfFilename,
+        originalName: pdfFilename,
+        mimeType: "application/pdf",
+        sizeBytes: pdfBytes.length,
+        kind: "TYPESET_PDF",
+        uploadedById: admin.id,
       },
     });
 
-    let firstPage = 1;
-    const articles = SEED_ARTICLES[i];
-    for (let j = 0; j < articles.length; j++) {
-      const art = articles[j];
-      globalIdx++;
-      const lastPage = firstPage + 14 + ((globalIdx * 3) % 8);
-      const slug = slugify(art.title);
-      const doi = `10.5281/ucr.v${def.volume}i${def.issue}.${String(j + 1).padStart(3, "0")}`;
-      const refs = pickReferences(globalIdx);
+    const received = new Date("2026-08-15");
+    const accepted = new Date("2026-10-10");
+    const published = new Date("2026-10-22");
 
-      // generate PDF
-      const pdfBytes = await makeSeedPdf({
-        title: art.title,
-        authors: art.authors.map((a) => `${a.first} ${a.last}`),
-        journalTitle: JOURNAL_TITLE,
-        issn: ISSN,
-        volume: def.volume,
-        issue: def.issue,
-        year: def.year,
-        firstPage,
-        lastPage,
-        doi,
-        abstract: art.abstract,
-        keywords: art.keywords,
-        bodyParagraphs: buildBodyParagraphs(art),
-        references: refs,
-      });
-      const pdfFilename = `${slug}.pdf`;
-      await writeFile(path.join(pdfDir, pdfFilename), pdfBytes);
-
-      const storedFile = await db.storedFile.create({
-        data: {
-          filename: pdfFilename,
-          originalName: pdfFilename,
-          mimeType: "application/pdf",
-          sizeBytes: pdfBytes.length,
-          kind: "TYPESET_PDF",
-          uploadedById: admin.id,
-        },
-      });
-
-      const received = new Date(def.published);
-      received.setMonth(received.getMonth() - 7);
-      const accepted = new Date(def.published);
-      accepted.setMonth(accepted.getMonth() - 2);
-
-      const article = await db.article.create({
-        data: {
-          slug,
-          issueId: issue.id,
-          title: art.title,
-          abstract: art.abstract,
-          articleType: art.type,
-          doi,
-          firstPage,
-          lastPage,
-          receivedDate: received,
-          acceptedDate: accepted,
-          publishedOnline: def.published,
-          status: "PUBLISHED",
-          pdfFileId: storedFile.id,
-          viewsCount: 200 + ((globalIdx * 731) % 3500),
-          orderInIssue: j,
-          authors: {
-            create: art.authors.map((a, idx) => ({
-              name: `${a.first} ${a.last}`,
-              firstName: a.first,
-              lastName: a.last,
-              email: a.corresponding
-                ? `${a.first.toLowerCase()}.${a.last.toLowerCase()}@example.edu.ng`
-                : null,
-              affiliation: a.affiliation,
-              orcid: a.orcid,
-              isCorresponding: !!a.corresponding,
-              order: idx,
-            })),
-          },
-          references: {
-            create: refs.map((text, idx) => ({ order: idx, text })),
-          },
-        },
-      });
-
-      // keywords
-      for (const kw of art.keywords) {
-        const kwSlug = slugify(kw);
-        const keyword = await db.keyword.upsert({
-          where: { slug: kwSlug },
-          create: { slug: kwSlug, label: kw },
-          update: {},
-        });
-        await db.articleKeyword.create({
-          data: { articleId: article.id, keywordId: keyword.id },
-        });
-      }
-
-      // FTS index
-      await db.$executeRaw`INSERT OR IGNORE INTO article_fts_map (article_id) VALUES (${article.id})`;
-      const rows = await db.$queryRaw<{ rowid: bigint }[]>`
-        SELECT rowid FROM article_fts_map WHERE article_id = ${article.id}`;
-      const rowid = Number(rows[0].rowid);
-      const authorsStr = art.authors.map((a) => `${a.first} ${a.last}`).join(", ");
-      await db.$executeRaw`INSERT INTO article_fts (rowid, title, abstract, authors, keywords)
-        VALUES (${rowid}, ${art.title}, ${art.abstract}, ${authorsStr}, ${art.keywords.join(", ")})`;
-
-      firstPage = lastPage + 1;
-    }
-  }
-
-  // ---- in-flight sample submissions (cover the workflow statuses) ----
-  const YEAR = 2026;
-  let subNumber = 40;
-
-  const mkSubmission = async (opts: {
-    title: string;
-    abstract: string;
-    keywords: string;
-    status: string;
-    author: { id: string; name: string; email: string; affiliation: string };
-    extras?: Record<string, unknown>;
-  }) => {
-    subNumber++;
-    return db.submission.create({
+    // Create completed submission record so dashboard workflow is fully populated
+    const submission = await db.submission.create({
       data: {
-        number: subNumber,
-        title: opts.title,
-        abstract: opts.abstract,
-        keywordsCsv: opts.keywords,
-        articleType: "RESEARCH_ARTICLE",
-        wordCount: 5400,
-        status: opts.status,
-        correspondingAuthorId: opts.author.id,
+        number: j + 1,
+        title: art.title,
+        abstract: art.abstract,
+        keywordsCsv: art.keywords.join(", "),
+        articleType: art.type,
+        wordCount: 5500 + (j * 150),
+        status: "PUBLISHED",
+        correspondingAuthorId: corrUserId,
         guidelinesConfirmed: true,
         feeAcknowledged: true,
-        submittedAt: new Date(`${YEAR}-05-0${(subNumber % 8) + 1}`),
+        paymentConfirmed: true,
+        paymentConfirmedAt: accepted,
+        paymentConfirmedById: editor.id,
+        submittedAt: received,
         authors: {
-          create: [
-            {
-              name: opts.author.name,
-              email: opts.author.email,
-              affiliation: opts.author.affiliation,
-              isCorresponding: true,
-              order: 0,
-            },
-          ],
+          create: art.authors.map((a, idx) => ({
+            name: a.title ? `${a.title} ${a.first} ${a.last}` : `${a.first} ${a.last}`,
+            email: a.email || `${a.first.toLowerCase().replace(/[^a-z]/g, "")}@example.edu.ng`,
+            affiliation: a.affiliation,
+            orcid: a.orcid || null,
+            isCorresponding: !!a.corresponding,
+            order: idx,
+          })),
         },
         events: {
           create: [
-            {
-              type: "SUBMITTED",
-              actorId: opts.author.id,
-            },
+            { type: "SUBMITTED", actorId: corrUserId, createdAt: received },
+            { type: "ACCEPTED", actorId: editor.id, createdAt: accepted },
+            { type: "PUBLISHED", actorId: admin.id, createdAt: published },
           ],
         },
-        ...(opts.extras ?? {}),
       },
     });
-  };
 
-  // a couple of fake manuscript files for the in-flight submissions
-  const msDir = path.resolve(
-    process.cwd(),
-    process.env.UPLOADS_DIR ?? "./uploads",
-    "manuscripts"
-  );
-  await mkdir(msDir, { recursive: true });
-  const dummyPdf = await makeSeedPdf({
-    title: "Anonymized Manuscript (Sample)",
-    authors: ["[Author identities removed for review]"],
-    journalTitle: JOURNAL_TITLE,
-    issn: ISSN,
-    volume: 0,
-    issue: 0,
-    year: YEAR,
-    firstPage: 1,
-    lastPage: 18,
-    doi: null,
-    abstract:
-      "This is a sample anonymized manuscript file generated for development and demonstration purposes.",
-    keywords: ["sample"],
-    bodyParagraphs: ["## 1. Introduction", "Sample manuscript body."],
-    references: ["Sample reference (2026)."],
-  });
-
-  const mkManuscriptFile = async (label: string) => {
-    const filename = `seed-${label}.pdf`;
-    await writeFile(path.join(msDir, filename), dummyPdf);
-    return db.storedFile.create({
+    const article = await db.article.create({
       data: {
-        filename,
-        originalName: `manuscript-${label}.pdf`,
-        mimeType: "application/pdf",
-        sizeBytes: dummyPdf.length,
-        kind: "ANONYMIZED_MANUSCRIPT",
-        uploadedById: author1.id,
+        slug,
+        issueId: issue.id,
+        submissionId: submission.id,
+        title: art.title,
+        abstract: art.abstract,
+        articleType: art.type,
+        doi,
+        firstPage,
+        lastPage,
+        receivedDate: received,
+        acceptedDate: accepted,
+        publishedOnline: published,
+        status: "PUBLISHED",
+        pdfFileId: storedFile.id,
+        viewsCount: 300 + ((j * 137) % 500),
+        orderInIssue: j,
+        authors: {
+          create: art.authors.map((a, idx) => ({
+            name: a.title ? `${a.title} ${a.first} ${a.last}` : `${a.first} ${a.last}`,
+            firstName: a.first,
+            lastName: a.last,
+            email: a.email || null,
+            affiliation: a.affiliation,
+            orcid: a.orcid || null,
+            isCorresponding: !!a.corresponding,
+            order: idx,
+          })),
+        },
+        references: {
+          create: refs.map((text, idx) => ({ order: idx, text })),
+        },
       },
     });
-  };
 
-  const a1 = { id: author1.id, name: "Adaeze Okafor", email: "adaeze.okafor@example.edu.ng", affiliation: "University of Lagos, Nigeria" };
-  const a2 = { id: author2.id, name: "Tunde Bakare", email: "tunde.bakare@example.edu.ng", affiliation: "Lagos State University, Nigeria" };
-  const a3 = { id: author3.id, name: "Ngozi Chukwu", email: "ngozi.chukwu@example.edu.ng", affiliation: "University of Nigeria, Nsukka" };
+    // keywords
+    for (const kw of art.keywords) {
+      const kwSlug = slugify(kw);
+      const keyword = await db.keyword.upsert({
+        where: { slug: kwSlug },
+        create: { slug: kwSlug, label: kw },
+        update: {},
+      });
+      await db.articleKeyword.create({
+        data: { articleId: article.id, keywordId: keyword.id },
+      });
+    }
 
-  // 1. freshly SUBMITTED
-  const subA = await mkSubmission({
-    title: "Live-Streamed Worship and the Mediatization of Religious Authority in Lagos Megachurches",
-    abstract: "This study examines how live-streamed services reconfigure pastoral authority and congregational participation in three Lagos megachurches, drawing on service observation and member interviews.",
-    keywords: "mediatization, religion, live streaming, authority",
-    status: "SUBMITTED",
-    author: a1,
-  });
-  const fileA = await mkManuscriptFile("a");
-  await db.submissionVersion.create({
-    data: { submissionId: subA.id, versionNumber: 1, anonymizedFileId: fileA.id },
-  });
-
-  // 2. UNDER_REVIEW with two accepted assignments
-  const subB = await mkSubmission({
-    title: "Influencer Disclosure Practices and Advertising Regulation on Nigerian Instagram",
-    abstract: "An audit of sponsored-content disclosure among 150 Nigerian Instagram influencers, assessed against ARCON's advertising code, with implications for consumer protection.",
-    keywords: "influencers, advertising, disclosure, regulation",
-    status: "UNDER_REVIEW",
-    author: a2,
-  });
-  const fileB = await mkManuscriptFile("b");
-  await db.submissionVersion.create({
-    data: { submissionId: subB.id, versionNumber: 1, anonymizedFileId: fileB.id },
-  });
-  await db.decision.create({
-    data: {
-      submissionId: subB.id,
-      versionNumber: 1,
-      decision: "SEND_TO_REVIEW",
-      letterToAuthor: "Your manuscript has passed initial screening and has been sent for double-blind peer review.",
-      decidedById: editor.id,
-    },
-  });
-  const due = new Date();
-  due.setDate(due.getDate() + 28);
-  await db.reviewAssignment.create({
-    data: {
-      submissionId: subB.id,
-      reviewerId: reviewer1.id,
-      versionNumber: 1,
-      status: "ACCEPTED",
-      respondedAt: new Date(),
-      dueDate: due,
-      invitedById: editor.id,
-    },
-  });
-  await db.reviewAssignment.create({
-    data: {
-      submissionId: subB.id,
-      reviewerId: reviewer2.id,
-      versionNumber: 1,
-      status: "INVITED",
-      dueDate: due,
-      invitedById: editor.id,
-    },
-  });
-
-  // 3. REVISIONS_REQUESTED with completed reviews
-  const subC = await mkSubmission({
-    title: "Mobile Money Adverts and Financial Inclusion Narratives in Nigerian Mass Media",
-    abstract: "A multimodal discourse analysis of mobile money advertising across radio, television, and out-of-home media, interrogating who is imagined as the 'unbanked' Nigerian.",
-    keywords: "financial inclusion, advertising, discourse analysis, mobile money",
-    status: "REVISIONS_REQUESTED",
-    author: a3,
-  });
-  const fileC = await mkManuscriptFile("c");
-  await db.submissionVersion.create({
-    data: { submissionId: subC.id, versionNumber: 1, anonymizedFileId: fileC.id },
-  });
-  const asgC1 = await db.reviewAssignment.create({
-    data: {
-      submissionId: subC.id,
-      reviewerId: reviewer1.id,
-      versionNumber: 1,
-      status: "SUBMITTED",
-      respondedAt: new Date(),
-      dueDate: due,
-      invitedById: editor.id,
-    },
-  });
-  await db.review.create({
-    data: {
-      assignmentId: asgC1.id,
-      recommendation: "MAJOR_REVISIONS",
-      commentsToAuthor:
-        "The manuscript addresses an important topic, but the analytical framework needs sharper definition. The multimodal analysis would benefit from a systematic coding scheme, and the sample of advertisements should be justified. Sections 2 and 4 partially duplicate each other and should be consolidated.",
-      commentsToEditor: "Promising but needs a substantial second round.",
-    },
-  });
-  const asgC2 = await db.reviewAssignment.create({
-    data: {
-      submissionId: subC.id,
-      reviewerId: reviewer3.id,
-      versionNumber: 1,
-      status: "SUBMITTED",
-      respondedAt: new Date(),
-      dueDate: due,
-      invitedById: editor.id,
-    },
-  });
-  await db.review.create({
-    data: {
-      assignmentId: asgC2.id,
-      recommendation: "MINOR_REVISIONS",
-      commentsToAuthor:
-        "A well-written study. Please update the literature review to engage recent work on fintech marketing in East Africa, clarify the period of data collection, and correct several APA formatting inconsistencies in the reference list.",
-      commentsToEditor: null,
-    },
-  });
-  await db.decision.create({
-    data: {
-      submissionId: subC.id,
-      versionNumber: 1,
-      decision: "MAJOR_REVISIONS",
-      letterToAuthor:
-        "Thank you for your submission. Following double-blind review, we invite you to revise and resubmit your manuscript. Please address the reviewers' comments point by point, in particular the definition of the analytical framework and the coding scheme for the multimodal analysis.",
-      decidedById: editorInChief.id,
-    },
-  });
-
-  // 4. ACCEPTED, awaiting payment/production
-  const subD = await mkSubmission({
-    title: "Radio Phone-In Programmes and Everyday Accountability Politics in Ibadan",
-    abstract: "Based on six months of listening ethnography, this article analyses how morning phone-in programmes mediate accountability claims between residents and local government officials.",
-    keywords: "radio, accountability, phone-in, local politics",
-    status: "ACCEPTED",
-    author: a1,
-  });
-  const fileD = await mkManuscriptFile("d");
-  await db.submissionVersion.create({
-    data: { submissionId: subD.id, versionNumber: 1, anonymizedFileId: fileD.id },
-  });
-  await db.decision.create({
-    data: {
-      submissionId: subD.id,
-      versionNumber: 1,
-      decision: "ACCEPT",
-      letterToAuthor:
-        "We are pleased to inform you that your manuscript has been accepted for publication in UNILAG Communication Review. Payment instructions for the publication fee accompany this letter; production will begin once payment is confirmed.",
-      decidedById: editorInChief.id,
-    },
-  });
-
-  // 5. DESK_REJECTED
-  await mkSubmission({
-    title: "A General Overview of Communication",
-    abstract: "This paper presents a broad overview of the field of communication and its many definitions across time.",
-    keywords: "communication, overview",
-    status: "DESK_REJECTED",
-    author: a2,
-    extras: {
-      deskRejectReason:
-        "The manuscript does not present original research and falls outside the journal's scope, which prioritises empirical and theoretical contributions on communication and sociocultural phenomena.",
-    },
-  });
-
-  // 6. REJECTED after review
-  const subF = await mkSubmission({
-    title: "Newspaper Reading Habits of Undergraduate Students",
-    abstract: "A survey of newspaper reading habits among 120 undergraduates at a single Nigerian university.",
-    keywords: "newspapers, reading habits, students",
-    status: "REJECTED",
-    author: a3,
-  });
-  const fileF = await mkManuscriptFile("f");
-  await db.submissionVersion.create({
-    data: { submissionId: subF.id, versionNumber: 1, anonymizedFileId: fileF.id },
-  });
-  await db.decision.create({
-    data: {
-      submissionId: subF.id,
-      versionNumber: 1,
-      decision: "REJECT",
-      letterToAuthor:
-        "Following double-blind review, we regret that we are unable to accept your manuscript. Reviewers found the sample insufficient for the claims advanced and the contribution to existing literature limited. We encourage you to consider the attached reports in developing future work.",
-      decidedById: editor.id,
-    },
-  });
+    // FTS index
+    await db.$executeRaw`INSERT OR IGNORE INTO article_fts_map (article_id) VALUES (${article.id})`;
+    const rows = await db.$queryRaw<{ rowid: bigint }[]>`
+      SELECT rowid FROM article_fts_map WHERE article_id = ${article.id}`;
+    const rowid = Number(rows[0].rowid);
+    const authorsStr = art.authors.map((a) => `${a.first} ${a.last}`).join(", ");
+    await db.$executeRaw`INSERT INTO article_fts (rowid, title, abstract, authors, keywords)
+      VALUES (${rowid}, ${art.title}, ${art.abstract}, ${authorsStr}, ${art.keywords.join(", ")})`;
+  }
 
   const articleCount = await db.article.count();
   const userCount = await db.user.count();
@@ -861,7 +623,8 @@ async function main() {
   console.log(
     `Seed complete: ${articleCount} articles, ${userCount} users, ${submissionCount} submissions.`
   );
-  console.log(`All seeded accounts use the password: ${PASSWORD}`);
+  console.log(`Volume: Volume ${SPECIAL_ISSUE_VOLUME}, Issue ${SPECIAL_ISSUE_NUMBER} (${SPECIAL_ISSUE_TITLE})`);
+  console.log(`All seeded accounts use password: ${PASSWORD}`);
 }
 
 main()

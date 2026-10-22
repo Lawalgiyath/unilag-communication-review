@@ -96,7 +96,60 @@ export default function SettingsClient({
             </div>
             <div className="field">
               <label htmlFor="doiPrefix" className="field-label">DOI Prefix</label>
-              <input id="doiPrefix" type="text" name="doiPrefix" defaultValue={getVal("doiPrefix")} />
+              <input id="doiPrefix" type="text" name="doiPrefix" defaultValue={getVal("doiPrefix") || "10.5281/zenodo"} />
+            </div>
+          </div>
+        </fieldset>
+
+        {/* Zenodo DOI Integration */}
+        <fieldset className="border border-hairline p-5">
+          <legend className="px-2 text-xs font-semibold uppercase tracking-[0.14em] text-maroon">
+            Zenodo Automatic DOI Engine (100% Free)
+          </legend>
+          <p className="mt-1 text-xs text-secondary">
+            Mint official, permanent DOIs (<code>10.5281/zenodo.XXXXXXX</code>) through CERN / Zenodo for all accepted manuscripts.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="field">
+              <label htmlFor="zenodo_token" className="field-label">
+                Zenodo Access Token
+              </label>
+              <input
+                id="zenodo_token"
+                type="password"
+                name="zenodo_token"
+                defaultValue={getVal("zenodo_token")}
+                placeholder="Personal access token with deposit:actions, deposit:write"
+              />
+              <p className="mt-1 text-[11px] text-secondary">
+                Generate free token at <a href="https://zenodo.org/account/settings/applications/tokens/new/" target="_blank" rel="noopener noreferrer" className="text-maroon underline">zenodo.org/tokens</a>
+              </p>
+            </div>
+
+            <div className="field">
+              <label htmlFor="zenodo_community" className="field-label">
+                Zenodo Community (Optional)
+              </label>
+              <input
+                id="zenodo_community"
+                type="text"
+                name="zenodo_community"
+                defaultValue={getVal("zenodo_community")}
+                placeholder="e.g. unilag-communication-review"
+              />
+            </div>
+
+            <div className="field sm:col-span-2">
+              <label className="flex items-center gap-2 text-sm text-ink cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="zenodo_sandbox"
+                  value="true"
+                  defaultChecked={getVal("zenodo_sandbox") === "true"}
+                  className="rounded border-hairline text-maroon"
+                />
+                <span>Use Sandbox environment (<code>sandbox.zenodo.org</code> for testing without registering public DOIs)</span>
+              </label>
             </div>
           </div>
         </fieldset>

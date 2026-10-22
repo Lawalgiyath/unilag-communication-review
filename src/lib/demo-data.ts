@@ -1,9 +1,17 @@
 /**
- * Static demo data — all 30 seed articles across 6 issues / 3 volumes.
+ * Static real data — 10 real articles for Special Issue Volume 9 Number 2.
  * Public pages read from this file; no database is required.
  */
 
-import { REFERENCE_POOL, SEED_ARTICLES, buildBodyParagraphs } from "../../prisma/seed-data";
+import {
+  REFERENCE_POOL,
+  SEED_ARTICLES,
+  buildBodyParagraphs,
+  SPECIAL_ISSUE_TITLE,
+  SPECIAL_ISSUE_VOLUME,
+  SPECIAL_ISSUE_NUMBER,
+  SPECIAL_ISSUE_YEAR,
+} from "../../prisma/seed-data";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,6 +71,8 @@ export interface DemoIssue {
   isCurrent: boolean;
   articleCount: number;
   articles: DemoArticle[];
+  title?: string | null;
+  guestEditor?: string | null;
 }
 
 export interface DemoVolume {
@@ -84,24 +94,21 @@ function slug(text: string): string {
 }
 
 const ISSUE_DATES: Date[] = [
-  new Date("2024-03-01"),
-  new Date("2024-09-01"),
-  new Date("2025-03-01"),
-  new Date("2025-09-01"),
-  new Date("2026-03-01"),
-  new Date("2026-06-01"), // current
+  new Date("2026-10-22"), // Volume 9 Number 2 (Special Issue)
 ];
 
 const VOLUME_DEFS = [
-  { vol: 10, year: 2024 },
-  { vol: 10, year: 2024 },
-  { vol: 11, year: 2025 },
-  { vol: 11, year: 2025 },
-  { vol: 12, year: 2026 },
-  { vol: 12, year: 2026 },
+  {
+    vol: SPECIAL_ISSUE_VOLUME,
+    year: SPECIAL_ISSUE_YEAR,
+    issue: SPECIAL_ISSUE_NUMBER,
+    title: SPECIAL_ISSUE_TITLE,
+    guestEditor: "Dr. Bisi Crown Olawuyi",
+    isCurrent: true,
+  },
 ];
 
-const VIEW_COUNTS = [312, 87, 203, 145, 421, 66, 188, 99, 340, 155, 278, 63, 90, 501, 122, 74, 230, 88, 167, 310, 45, 199, 83, 260, 137, 392, 58, 175, 210, 323];
+const VIEW_COUNTS = [412, 387, 293, 345, 421, 266, 388, 299, 340, 255];
 
 let globalArticleIndex = 0;
 const allArticles: DemoArticle[] = [];
@@ -109,37 +116,32 @@ const allIssues: DemoIssue[] = [];
 const volumeMap = new Map<number, DemoVolume>();
 
 SEED_ARTICLES.forEach((issueArticles, issueGroupIdx) => {
-  const volDef = VOLUME_DEFS[issueGroupIdx];
-  const issueNum = issueGroupIdx % 2 === 0 ? 1 : 2;
-  const pubDate = ISSUE_DATES[issueGroupIdx];
-  const isCurrent = issueGroupIdx === SEED_ARTICLES.length - 1;
+  const volDef = VOLUME_DEFS[issueGroupIdx] ?? VOLUME_DEFS[0];
+  const issueNum = volDef.issue;
+  const pubDate = ISSUE_DATES[issueGroupIdx] ?? new Date("2026-10-22");
+  const isCurrent = true;
 
   const issueId = `issue-${volDef.vol}-${issueNum}`;
   const volumeId = `vol-${volDef.vol}`;
 
   const builtArticles: DemoArticle[] = issueArticles.map((a, orderIdx) => {
     const ai = globalArticleIndex++;
-    const firstPage = 1 + orderIdx * 22;
-    const received = new Date(pubDate);
-    received.setMonth(received.getMonth() - 4);
-    const accepted = new Date(pubDate);
-    accepted.setMonth(accepted.getMonth() - 2);
+    const firstPage = a.firstPage ?? (1 + orderIdx * 20);
+    const lastPage = a.lastPage ?? (firstPage + 18);
+    const received = new Date("2026-08-15");
+    const accepted = new Date("2026-10-10");
 
-    const refs = (() => {
-      const out: string[] = [];
-      for (let k = 0; k < 12; k++) {
-        out.push(REFERENCE_POOL[(ai * 7 + k * 3) % REFERENCE_POOL.length]);
-      }
-      return [...new Set(out)].sort();
-    })();
+    const refs = a.references && a.references.length > 0
+      ? a.references
+      : REFERENCE_POOL.slice(0, 10);
 
     const authors: DemoAuthor[] = a.authors.map((au, i) => ({
-      name: `${au.first} ${au.last}`,
+      name: au.title ? `${au.title} ${au.first} ${au.last}` : `${au.first} ${au.last}`,
       firstName: au.first,
       lastName: au.last,
       affiliation: au.affiliation,
       orcid: au.orcid ?? null,
-      email: au.corresponding ? `${au.first.toLowerCase()}.${au.last.toLowerCase()}@example.edu.ng` : null,
+      email: au.email ?? null,
       isCorresponding: au.corresponding ?? false,
       order: i,
     }));
@@ -149,7 +151,7 @@ SEED_ARTICLES.forEach((issueArticles, issueGroupIdx) => {
       label: kw,
     }));
 
-    const articleSlug = slug(a.title);
+    const articleSlug = a.slug || slug(a.title);
 
     return {
       id: `art-${ai}`,
@@ -158,12 +160,12 @@ SEED_ARTICLES.forEach((issueArticles, issueGroupIdx) => {
       abstract: a.abstract,
       articleType: a.type,
       firstPage,
-      lastPage: firstPage + 20,
+      lastPage,
       publishedOnline: pubDate,
       receivedDate: received,
       acceptedDate: accepted,
       viewsCount: VIEW_COUNTS[ai % VIEW_COUNTS.length],
-      doi: `10.58999/ucr.${volDef.vol}.${issueNum}.${orderIdx + 1}`,
+      doi: a.doi || `10.5281/zenodo.1489200${orderIdx + 1}`,
       status: "PUBLISHED" as const,
       orderInIssue: orderIdx,
       issueId,
@@ -189,6 +191,8 @@ SEED_ARTICLES.forEach((issueArticles, issueGroupIdx) => {
     isCurrent,
     articleCount: builtArticles.length,
     articles: builtArticles,
+    title: volDef.title,
+    guestEditor: volDef.guestEditor,
   };
   allIssues.push(issue);
 
@@ -277,47 +281,37 @@ export interface DemoAnnouncement {
 export const DEMO_ANNOUNCEMENTS: DemoAnnouncement[] = [
   {
     id: "ann-1",
-    slug: "call-for-papers-vol-13",
-    title: "Call for Papers — Volume 13 (2027): Communication, AI and African Futures",
-    body: `UNILAG Communication Review invites submissions for **Volume 13 (2027)**, with a special focus on **Communication, Artificial Intelligence, and African Futures**.
+    slug: "special-issue-vol-9-no-2-published",
+    title: "Special Issue Published: Platforms, Power, and Polls: Perspectives Ahead of Nigeria’s 2027 General Elections",
+    body: `The Faculty of Communication and Media Studies, University of Lagos, is proud to announce the publication of **Volume 9, Number 2 (2026)** — our Special Issue titled **Platforms, Power, and Polls: Perspectives Ahead of Nigeria’s 2027 General Elections**.
 
-We welcome original research articles, review articles, and commentaries addressing themes including (but not limited to):
+Guest Edited by **Dr. Bisi Crown Olawuyi** (University of Ibadan), with Editor **Dr. Unwana Samuel Akpan** and Editor-in-Chief **Prof. Oloruntola Sunday**, this special issue features 10 peer-reviewed research articles addressing youth digital activism, electoral credibility, real-time result transmission, broadcast journalism, musical satire, and artificial intelligence in Nigerian politics.
 
-- Generative AI in African newsrooms and creative industries
-- Algorithmic governance, moderation, and African languages
-- AI, misinformation, and electoral integrity
-- Data justice and digital rights in the Global South
-- Indigenous knowledge systems and machine learning
-
-**Submission deadline:** 31 October 2026
-
-Manuscripts must not exceed 6,000 words (including references), formatted in APA 7th Edition, 12-point Times New Roman, double-spaced. All submissions undergo double-blind peer review.
-
-Submit through the journal's online submission system. General submissions outside the special focus remain welcome on a rolling basis.`,
-    kind: "CALL_FOR_PAPERS",
-    publishedAt: new Date("2026-05-02"),
+All articles are published open access with official Zenodo DOIs and available for immediate reading and PDF download. Browse the [Current Issue](/current) to access the table of contents.`,
+    kind: "NEWS",
+    publishedAt: new Date("2026-10-22"),
   },
   {
     id: "ann-2",
-    slug: "vol-12-issue-2-published",
-    title: "Volume 12, Issue 2 (2026) now online",
-    body: `We are delighted to announce the publication of **Volume 12, Issue 2 (2026)** of UNILAG Communication Review.
+    slug: "call-for-papers-vol-10",
+    title: "Call for Papers — Volume 10: Communication, AI and African Futures",
+    body: `UNILAG Communication Review invites submissions for our upcoming volume, with a special focus on **Communication, Artificial Intelligence, and African Futures**.
 
-This issue features research on data costs and digital news stratification, religious broadcasting and public health, platform moderation in African languages, the editorial cartoon in Nigerian democracy, and media literacy in secondary education.
+We welcome original research articles, review articles, and commentaries. All submissions undergo double-blind peer review.
 
-All articles are freely available — browse the [current issue](/current).`,
-    kind: "NEWS",
-    publishedAt: new Date("2026-04-20"),
+Submit through the journal's online submission portal. General submissions outside the special focus remain welcome on a rolling basis.`,
+    kind: "CALL_FOR_PAPERS",
+    publishedAt: new Date("2026-10-15"),
   },
   {
     id: "ann-3",
     slug: "journal-indexing-update",
-    title: "Indexing and visibility update",
-    body: `As part of our commitment to global visibility, all articles published in UNILAG Communication Review now carry full bibliographic metadata for indexing services, including Google Scholar citation tags, DOIs, and OAI-PMH harvesting support for library aggregators.
+    title: "Indexing and Digital Visibility Update",
+    body: `As part of our commitment to global visibility, all articles published in UNILAG Communication Review now carry full bibliographic metadata for indexing services, including Google Scholar citation tags, Zenodo DOIs, and OAI-PMH harvesting support for library aggregators worldwide.
 
-Authors can expect their published work to be discoverable through major academic search engines. Questions about indexing can be directed to the editorial office.`,
+Authors can expect their published work to be discoverable through major academic search engines and international indexes.`,
     kind: "NEWS",
-    publishedAt: new Date("2026-02-10"),
+    publishedAt: new Date("2026-10-10"),
   },
 ];
 
@@ -337,12 +331,54 @@ export interface DemoBoardMember {
 }
 
 export const DEMO_BOARD: DemoBoardMember[] = [
-  { id: "b1", name: "Prof. Sunday Oloruntola", role: "Editor-in-Chief", affiliation: "University of Lagos, Nigeria", orcid: null, order: 1 },
-  { id: "b2", name: "Dr. Unwana Samuel Akpan", role: "Editor", affiliation: "University of Lagos, Nigeria", orcid: null, order: 2 },
-  { id: "b3", name: "Prof. Sunday Oloruntola", role: "Member", affiliation: "University of Lagos, Nigeria", orcid: null, order: 3 },
-  { id: "b4", name: "Prof. Adepoju Tejumaiye", role: "Member", affiliation: "University of Lagos, Nigeria", orcid: null, order: 4 },
-  { id: "b5", name: "Prof. Ishmael Ibrahim", role: "Member", affiliation: "University of Lagos, Nigeria", orcid: null, order: 5 },
-  { id: "b6", name: "Dr. Tayo Popoola", role: "Member", affiliation: "University of Lagos, Nigeria", orcid: null, order: 6 },
+  {
+    id: "b1",
+    name: "Dr. Bisi Crown Olawuyi",
+    role: "Special Issue Guest Editor",
+    affiliation: "Department of Communication and Language Arts, University of Ibadan, Nigeria",
+    orcid: null,
+    order: 1,
+  },
+  {
+    id: "b2",
+    name: "Prof. Oloruntola Sunday",
+    role: "Editor-in-Chief",
+    affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
+    orcid: null,
+    order: 2,
+  },
+  {
+    id: "b3",
+    name: "Dr. Unwana Samuel Akpan",
+    role: "Editor",
+    affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
+    orcid: null,
+    order: 3,
+  },
+  {
+    id: "b4",
+    name: "Prof. Adepoju Tejumaiye",
+    role: "Member",
+    affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
+    orcid: null,
+    order: 4,
+  },
+  {
+    id: "b5",
+    name: "Prof. Ismail Ibraheem",
+    role: "Member",
+    affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
+    orcid: null,
+    order: 5,
+  },
+  {
+    id: "b6",
+    name: "Prof. Popoola Ibitayo Samuel",
+    role: "Member",
+    affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
+    orcid: null,
+    order: 6,
+  },
 ];
 
 // ─── Demo static pages ────────────────────────────────────────────────────────

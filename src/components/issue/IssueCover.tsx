@@ -10,12 +10,14 @@ export function IssueCover({
   year,
   publishedAt,
   size = "md",
+  isSpecialIssue,
 }: {
   volume: number;
   issue: number;
   year: number;
   publishedAt?: Date | null;
   size?: "sm" | "md" | "lg";
+  isSpecialIssue?: boolean;
 }) {
   const heights = { sm: "h-32", md: "h-44", lg: "h-56" };
   const volSizes = { sm: "text-3xl", md: "text-5xl", lg: "text-6xl" };
@@ -25,6 +27,11 @@ export function IssueCover({
       aria-hidden="true"
     >
       <div className="pointer-events-none absolute inset-2 border border-gold/60" />
+      {isSpecialIssue && (
+        <span className="mb-1 rounded border border-gold/70 bg-gold/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em] text-gold">
+          Special Issue
+        </span>
+      )}
       <span className="text-[10px] uppercase tracking-[0.22em] text-gold">
         Volume
       </span>
