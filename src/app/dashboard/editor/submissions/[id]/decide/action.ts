@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
 import { JOURNAL } from "@/lib/constants";
+import { getSettings } from "@/lib/settings";
 import { DECISION_TYPES } from "@/lib/types";
 import { TRANSITIONS } from "@/lib/workflow";
 import type { SubmissionStatus, DecisionType } from "@/lib/types";
@@ -76,6 +77,40 @@ export async function recordDecisionAction(
     },
   });
 
+  let assignedDoi: string | undefined;
+
+  if (decision === "ACCEPT") {
+    const settings = await getSettings();
+    const slugBase = sub.title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .slice(0, 80);
+    const slug = `${slugBase}-${Date.now().toString(36)}`;
+    assignedDoi = `${settings.doiPrefix}/ucr.${new Date().getFullYear()}.${slugBase.slice(0, 12)}`;
+
+    // Create or update accepted Article with the DOI assigned
+    await db.article.upsert({
+      where: { submissionId },
+      create: {
+        submissionId,
+        slug,
+        title: sub.title,
+        abstract: sub.abstract,
+        articleType: sub.articleType,
+        status: "DRAFT",
+        doi: assignedDoi,
+        receivedDate: sub.submittedAt,
+        acceptedDate: new Date(),
+      },
+      update: {
+        doi: assignedDoi,
+        acceptedDate: new Date(),
+      },
+    });
+  }
+
   await db.submission.update({
     where: { id: submissionId },
     data: { status: newStatus },
@@ -85,10 +120,14 @@ export async function recordDecisionAction(
     data: { submissionId, type: `DECISION_${decision}`, actorId: editor.id },
   });
 
+  const doiText = assignedDoi
+    ? `\n\nAssigned Permanent Digital Object Identifier (DOI): ${assignedDoi}`
+    : "";
+
   await sendEmail({
     to: sub.correspondingAuthor.email,
     subject: `Editorial decision: ${sub.title.slice(0, 60)}`,
-    text: `Dear ${sub.correspondingAuthor.name},\n\nThank you for submitting your manuscript to ${JOURNAL.title}. We have completed our review process and are pleased to communicate the editorial decision regarding your submission.\n\n${letterToAuthor}\n\nWarm regards,\n${JOURNAL.title} Editorial Office`,
+    text: `Dear ${sub.correspondingAuthor.name},\n\nThank you for submitting your manuscript to ${JOURNAL.title}. We have completed our review process and are pleased to communicate the editorial decision regarding your submission.\n\n${letterToAuthor}${doiText}\n\nWarm regards,\n${JOURNAL.title} Editorial Office`,
     template: `decision_${decision.toLowerCase()}`,
   });
 

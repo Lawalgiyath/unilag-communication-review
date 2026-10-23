@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { format } from "date-fns";
 import { db } from "@/lib/db";
+import { ConfirmSubmitButton } from "@/components/common/ConfirmSubmitButton";
 
 export const metadata: Metadata = { title: "Announcements" };
 export const dynamic = "force-dynamic";
@@ -68,11 +69,16 @@ export default async function AnnouncementsIndex() {
                         "use server";
                         const { db: p } = await import("@/lib/db");
                         await p.announcement.delete({ where: { id: item.id } });
+                        const { revalidatePath: reval } = await import("next/cache");
+                        reval("/dashboard/editor/announcements");
+                        reval("/announcements");
                       }}>
-                        <button type="submit" className="btn btn-ghost btn-sm text-error"
-                          onClick={(e) => { if (!confirm("Delete this announcement?")) e.preventDefault(); }}>
+                        <ConfirmSubmitButton
+                          confirmMessage="Delete this announcement?"
+                          className="btn btn-ghost btn-sm text-error"
+                        >
                           Delete
-                        </button>
+                        </ConfirmSubmitButton>
                       </form>
                     </div>
                   </td>

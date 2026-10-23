@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { ConfirmSubmitButton } from "@/components/common/ConfirmSubmitButton";
 
 export const metadata: Metadata = { title: "Editorial Board Management" };
 export const dynamic = "force-dynamic";
@@ -55,11 +57,16 @@ export default async function BoardManagementPage() {
                     "use server";
                     const { db: p } = await import("@/lib/db");
                     await p.boardMember.delete({ where: { id: m.id } });
+                    const { revalidatePath: reval } = await import("next/cache");
+                    reval("/dashboard/editor/board");
+                    reval("/editorial-board");
                   }}>
-                    <button type="submit" className="btn btn-ghost btn-sm text-error"
-                      onClick={(e) => { if (!confirm("Delete this member?")) e.preventDefault(); }}>
+                    <ConfirmSubmitButton
+                      confirmMessage="Delete this board member?"
+                      className="btn btn-ghost btn-sm text-error"
+                    >
                       Delete
-                    </button>
+                    </ConfirmSubmitButton>
                   </form>
                 </div>
               </td>

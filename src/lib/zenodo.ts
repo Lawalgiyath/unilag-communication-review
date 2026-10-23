@@ -210,6 +210,18 @@ export async function depositAndMintZenodoDoi(
     );
     if (existsSync(candidatePath)) {
       pdfBuffer = await readFile(candidatePath);
+    } else if (params.articleId) {
+      try {
+        const art = await db.article.findUnique({
+          where: { id: params.articleId },
+          include: { pdfFile: true },
+        });
+        if (art?.pdfFile?.fileData) {
+          pdfBuffer = Buffer.from(art.pdfFile.fileData);
+        }
+      } catch (err) {
+        console.warn("Could not load PDF from database for Zenodo deposit:", err);
+      }
     }
   }
 

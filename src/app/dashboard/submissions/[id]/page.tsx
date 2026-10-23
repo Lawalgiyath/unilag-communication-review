@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
 import { SUBMISSION_STATUS_LABELS, formatSubmissionNumber } from "@/lib/types";
 import { ARTICLE_TYPES } from "@/lib/constants";
+import { ConfirmSubmitButton } from "@/components/common/ConfirmSubmitButton";
 
 export const metadata: Metadata = { title: "Submission Detail" };
 export const dynamic = "force-dynamic";
@@ -194,17 +195,16 @@ export default async function SubmissionDetailPage({
                 await prisma.submissionEvent.create({
                   data: { submissionId: sub.id, type: "WITHDRAWN", actorId: u.id },
                 });
+                const { revalidatePath } = await import("next/cache");
+                revalidatePath(`/dashboard/submissions/${sub.id}`);
               }}
             >
-              <button
-                type="submit"
+              <ConfirmSubmitButton
+                confirmMessage="Withdraw this submission? This cannot be undone."
                 className="btn btn-secondary w-full text-error"
-                onClick={(e) => {
-                  if (!confirm("Withdraw this submission? This cannot be undone.")) e.preventDefault();
-                }}
               >
                 Withdraw submission
-              </button>
+              </ConfirmSubmitButton>
             </form>
           )}
         </aside>

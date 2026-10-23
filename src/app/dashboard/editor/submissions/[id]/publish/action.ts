@@ -78,7 +78,8 @@ export async function publishAction(_prev: PublishState, formData: FormData): Pr
     .trim()
     .replace(/\s+/g, "-")
     .slice(0, 80);
-  const slug = `${slugBase}-${Date.now().toString(36)}`;
+  const existingArticle = await db.article.findUnique({ where: { submissionId } });
+  const slug = existingArticle?.slug || `${slugBase}-${Date.now().toString(36)}`;
 
   const keywords = sub.keywordsCsv
     .split(",")
@@ -86,7 +87,7 @@ export async function publishAction(_prev: PublishState, formData: FormData): Pr
     .filter(Boolean);
 
   const settings = await getSettings();
-  const autoDoi = d.doi || `${settings.doiPrefix}/ucr.${new Date(d.publishedDate).getFullYear()}.${slugBase.slice(0, 12)}`;
+  const autoDoi = d.doi || existingArticle?.doi || `${settings.doiPrefix}/ucr.${new Date(d.publishedDate).getFullYear()}.${slugBase.slice(0, 12)}`;
 
   const article = await db.article.upsert({
     where: { submissionId },
