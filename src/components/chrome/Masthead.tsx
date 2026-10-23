@@ -57,7 +57,7 @@ export function Masthead() {
           {/* Right Logo - Faculty of Communication and Media Studies */}
           <div className="hidden sm:flex w-[120px] justify-end shrink-0">
             <img 
-              src="/faculty-logo.jpg" 
+              src="/faculty-logo.png" 
               alt="Faculty of Communication and Media Studies Logo" 
               className="h-20 w-auto object-contain"
             />
