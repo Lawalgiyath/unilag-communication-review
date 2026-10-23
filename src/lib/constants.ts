@@ -12,7 +12,7 @@ export const JOURNAL = {
   address: "Akoka-Lagos, Nigeria",
   issn: "1597-0299",
   eissn: "3027-1851",
-  contactEmail: "ucr@unilag.edu.ng",
+  contactEmail: "unilagcommunicationreview@gmail.com",
   tagline: "Where Excellence Meets Impact",
   feeNaira: "30,000",
   doiPrefix: "10.5281/zenodo",

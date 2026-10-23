@@ -281,7 +281,7 @@ async function main() {
 
   // ---- wipe (idempotent reseeding) ----
   await db.$transaction([
-    db.passwordResetToken.deleteMany(),
+    (db as any).passwordResetToken ? (db as any).passwordResetToken.deleteMany() : db.$executeRawUnsafe(`DELETE FROM PasswordResetToken`),
     db.review.deleteMany(),
     db.reviewAssignment.deleteMany(),
     db.decision.deleteMany(),
@@ -331,7 +331,7 @@ async function main() {
       { key: "address", value: "Akoka-Lagos, Nigeria" },
       { key: "issn", value: ISSN },
       { key: "eissn", value: EISSN },
-      { key: "contact_email", value: "ucr@unilag.edu.ng" },
+      { key: "contact_email", value: "unilagcommunicationreview@gmail.com" },
       { key: "base_url", value: baseUrl },
       {
         key: "fee_text",

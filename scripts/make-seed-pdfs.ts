@@ -183,6 +183,71 @@ export async function makeSeedPdf(input: SeedPdfInput): Promise<Uint8Array> {
   );
   y -= 16;
 
+  const drawTable = (tableLines: string[]) => {
+    const rawRows = tableLines
+      .filter((l) => !l.replace(/\s+/g, "").startsWith("|--") && !l.replace(/\s+/g, "").startsWith("|:--"))
+      .map((l) =>
+        l
+          .split("|")
+          .slice(1, -1)
+          .map((c) => cleanWinAnsi(c.trim()))
+      );
+    if (rawRows.length === 0) return;
+
+    const numCols = Math.max(...rawRows.map((r) => r.length));
+    if (numCols === 0) return;
+
+    const colW = contentWidth / numCols;
+    const rowH = 17;
+    const padX = 4;
+
+    for (let rIdx = 0; rIdx < rawRows.length; rIdx++) {
+      const row = rawRows[rIdx];
+      const isHeader = rIdx === 0;
+      const font = isHeader ? timesBold : times;
+      const fontSize = numCols > 5 ? 7 : numCols > 3 ? 8 : 8.5;
+
+      ensureSpace(rowH + 4);
+
+      if (isHeader) {
+        page.drawRectangle({
+          x: MARGIN,
+          y: y - rowH + 3,
+          width: contentWidth,
+          height: rowH,
+          color: rgb(0.93, 0.93, 0.93),
+        });
+      }
+
+      page.drawLine({
+        start: { x: MARGIN, y: y - rowH + 3 },
+        end: { x: MARGIN + contentWidth, y: y - rowH + 3 },
+        thickness: isHeader ? 1 : 0.4,
+        color: rgb(0.65, 0.65, 0.65),
+      });
+
+      for (let cIdx = 0; cIdx < numCols; cIdx++) {
+        const text = row[cIdx] ?? "";
+        const cellMaxW = colW - 2 * padX;
+        let displayText = text;
+        while (displayText.length > 3 && font.widthOfTextAtSize(displayText, fontSize) > cellMaxW) {
+          displayText = displayText.slice(0, -4) + "...";
+        }
+
+        page.drawText(displayText, {
+          x: MARGIN + cIdx * colW + padX,
+          y: y - rowH + 5,
+          size: fontSize,
+          font,
+          color: rgb(0.1, 0.1, 0.1),
+        });
+      }
+
+      y -= rowH;
+    }
+    y -= 10;
+  };
+
   // Body
   for (let i = 0; i < input.bodyParagraphs.length; i++) {
     const para = input.bodyParagraphs[i];
@@ -196,6 +261,24 @@ export async function makeSeedPdf(input: SeedPdfInput): Promise<Uint8Array> {
         font: timesBold,
       });
       y -= 19;
+    } else if (para.startsWith("|")) {
+      const tableLines = [para];
+      while (i + 1 < input.bodyParagraphs.length && input.bodyParagraphs[i + 1].startsWith("|")) {
+        i++;
+        tableLines.push(input.bodyParagraphs[i]);
+      }
+      drawTable(tableLines);
+    } else if (para.startsWith("Table ") && (para.includes(":") || para.length < 100)) {
+      ensureSpace(24);
+      y -= 6;
+      page.drawText(cleanWinAnsi(para), {
+        x: MARGIN,
+        y,
+        size: 10,
+        font: timesBold,
+        color: rgb(0.2, 0.2, 0.2),
+      });
+      y -= 14;
     } else {
       drawParagraph(para, times, BODY_SIZE, BODY_LEADING);
       y -= 7;

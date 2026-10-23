@@ -54,9 +54,15 @@ export function Footer() {
                 ISSN {JOURNAL.eissn} (Online)
               </p>
               <div className="mt-6 rounded border border-paper/20 p-3 text-xs text-paper/80 bg-paper/5">
-                <p className="font-semibold text-paper">IT Support & Error Reporting</p>
-                <p className="mt-1">Mr. Lawal Giyath</p>
-                <p>Phone: 08062679191</p>
+                <p className="font-semibold text-paper">Contact &amp; Enquiries</p>
+                <p className="mt-1 break-all">
+                  <a
+                    href="mailto:unilagcommunicationreview@gmail.com"
+                    className="text-paper hover:text-gold underline"
+                  >
+                    unilagcommunicationreview@gmail.com
+                  </a>
+                </p>
               </div>
             </div>
             {FOOTER_COLS.map((col) => (

@@ -372,7 +372,7 @@ All articles are published under a Creative Commons Attribution 4.0 (CC BY 4.0) 
 
 ## Contact
 
-For editorial enquiries, please contact: **ucr@unilag.edu.ng**`,
+For editorial enquiries, please contact: **unilagcommunicationreview@gmail.com**`,
   },
   {
     slug: "aims-scope",
@@ -522,14 +522,13 @@ Faculty of Communication and Media Studies
 University of Lagos  
 Akoka-Yaba, Lagos, Nigeria
 
-**Email:** ucr@unilag.edu.ng
+**Email:** unilagcommunicationreview@gmail.com
 
-## IT Support & Error Reporting
+## Technical Support & Enquiries
 
-For technical issues with the journal website, please contact:
+For editorial or technical enquiries regarding the journal or submissions, please write to:
 
-**Mr. Lawal Giyath**  
-Phone: 08062679191
+**Editorial Office:** unilagcommunicationreview@gmail.com
 
 ## Submissions
 
