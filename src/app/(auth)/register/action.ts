@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { hashPassword, createSession } from "@/lib/auth";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, brandedEmailHtml } from "@/lib/email";
 import { JOURNAL } from "@/lib/constants";
 
 const RegisterSchema = z
@@ -76,10 +76,24 @@ export async function registerAction(
 
     await db.userRole.create({ data: { userId: user.id, role: "AUTHOR" } });
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://unilag-communication-review.vercel.app";
+    const dashboardUrl = `${siteUrl}/dashboard/submissions/new`;
+
     await sendEmail({
       to: normalizedEmail,
       subject: `Welcome to ${JOURNAL.title}`,
-      text: `Dear ${d.name},\n\nYour account has been created. You can now log in and submit manuscripts at ${process.env.NEXT_PUBLIC_SITE_URL ?? "https://unilag-communication-review.vercel.app"}.\n\nWarm regards,\n${JOURNAL.title} Editorial Office`,
+      text: `Dear ${d.name},\n\nYour account has been created successfully. You can now log in and submit manuscripts at ${siteUrl}.\n\nWarm regards,\n${JOURNAL.title} Editorial Office`,
+      html: brandedEmailHtml({
+        title: `Welcome to ${JOURNAL.title}`,
+        bodyHtml: `
+          <h3 style="color: #7b1113; margin-top: 0;">Account Created Successfully</h3>
+          <p>Dear <strong>${d.name}</strong>,</p>
+          <p>Welcome to <strong>${JOURNAL.title}</strong>, the peer-reviewed scholarly journal published by the Faculty of Communication and Media Studies, University of Lagos.</p>
+          <p>Your author account has been activated. You can now sign in to your dashboard to submit original research manuscripts, track peer reviews in real time, and manage your revisions.</p>
+        `,
+        ctaText: "Go to Dashboard & Submit Manuscript",
+        ctaUrl: dashboardUrl,
+      }),
       template: "welcome",
     });
 

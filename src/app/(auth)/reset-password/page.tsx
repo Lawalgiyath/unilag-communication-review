@@ -14,54 +14,12 @@ export default async function ResetPasswordPage({
 }) {
   const { token } = await searchParams;
 
-  if (!token) {
-    return (
-      <div className="border border-hairline bg-white p-8">
-        <h1 className="font-display text-2xl font-semibold text-ink">
-          Invalid Reset Link
-        </h1>
-        <div className="alert alert-error mt-4">
-          <span>No password reset token was provided.</span>
-        </div>
-        <p className="mt-5 text-sm text-secondary">
-          <Link
-            href="/forgot-password"
-            className="font-semibold text-maroon hover:underline"
-          >
-            ← Request a new password reset link
-          </Link>
-        </p>
-      </div>
-    );
-  }
-
-  const resetToken = await db.passwordResetToken.findUnique({
-    where: { token },
-  });
-
-  const isExpired = !resetToken || resetToken.expiresAt < new Date();
-
-  if (isExpired) {
-    return (
-      <div className="border border-hairline bg-white p-8">
-        <h1 className="font-display text-2xl font-semibold text-ink">
-          Expired or Invalid Link
-        </h1>
-        <div className="alert alert-error mt-4">
-          <span>
-            This password reset link is invalid or has expired. Password reset links are valid for one hour for security.
-          </span>
-        </div>
-        <p className="mt-5 text-sm text-secondary">
-          <Link
-            href="/forgot-password"
-            className="font-semibold text-maroon hover:underline"
-          >
-            ← Request a new password reset link
-          </Link>
-        </p>
-      </div>
-    );
+  let isExpired = false;
+  if (token) {
+    const resetToken = await db.passwordResetToken.findUnique({
+      where: { token },
+    });
+    isExpired = !resetToken || resetToken.expiresAt < new Date();
   }
 
   return (
@@ -70,10 +28,22 @@ export default async function ResetPasswordPage({
         Choose a new password
       </h1>
       <p className="mt-1 text-sm text-secondary">
-        Please enter and confirm your new password below.
+        Enter the secure reset code sent to your email and choose your new password.
       </p>
 
-      <ResetPasswordForm token={token} />
+      {isExpired && (
+        <div className="alert alert-error mt-4">
+          <span>
+            The reset link in your URL has expired or is invalid. If you requested a newer code, please paste it into the box below or{" "}
+            <Link href="/forgot-password" className="underline font-medium">
+              request a new reset link
+            </Link>
+            .
+          </span>
+        </div>
+      )}
+
+      <ResetPasswordForm token={isExpired ? "" : (token ?? "")} />
     </div>
   );
 }

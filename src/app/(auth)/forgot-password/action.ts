@@ -3,7 +3,7 @@
 import { z } from "zod";
 import crypto from "node:crypto";
 import { db } from "@/lib/db";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, brandedEmailHtml } from "@/lib/email";
 import { JOURNAL } from "@/lib/constants";
 
 const ForgotPasswordSchema = z.object({
@@ -62,8 +62,23 @@ export async function forgotPasswordAction(
 
   await sendEmail({
     to: user.email,
-    subject: `Password Reset Request — ${JOURNAL.title}`,
-    text: `Dear ${user.name},\n\nA request was made to reset the password for your ${JOURNAL.title} account.\n\nClick the link below (valid for 1 hour) to set a new password:\n\n${resetUrl}\n\nIf you did not request this change, you can safely ignore this email.\n\nWarm regards,\n${JOURNAL.title} Editorial Office`,
+    subject: `Password Reset Request - ${JOURNAL.title}`,
+    text: `Dear ${user.name},\n\nA request was made to reset the password for your ${JOURNAL.title} account.\n\nYour secure reset code is:\n${token}\n\nYou can click the link below (valid for 1 hour) or copy the security code above and paste it into the reset box:\n\n${resetUrl}\n\nIf you did not request this change, you can safely ignore this email.\n\nWarm regards,\n${JOURNAL.title} Editorial Office`,
+    html: brandedEmailHtml({
+      title: `Password Reset Request - ${JOURNAL.title}`,
+      bodyHtml: `
+        <h3 style="color: #7b1113; margin-top: 0;">Password Reset Request</h3>
+        <p>Dear <strong>${user.name}</strong>,</p>
+        <p>A request was made to reset the password for your account on <strong>${JOURNAL.title}</strong>.</p>
+        <div style="background-color: #f7f6f2; border: 1px dashed #7b1113; padding: 14px; text-align: center; margin: 20px 0; border-radius: 4px;">
+          <span style="font-size: 11px; text-transform: uppercase; color: #666666; display: block; letter-spacing: 0.05em; margin-bottom: 4px;">Your Reset Security Code</span>
+          <code style="font-size: 15px; font-weight: bold; color: #7b1113; letter-spacing: 0.05em; font-family: monospace;">${token}</code>
+        </div>
+        <p>You can either copy and paste this security code into the reset box, or click the button below (valid for 1 hour):</p>
+      `,
+      ctaText: "Reset My Password",
+      ctaUrl: resetUrl,
+    }),
     template: "password-reset",
   });
 

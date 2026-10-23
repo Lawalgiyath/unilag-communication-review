@@ -33,33 +33,43 @@ export async function reindexArticle(articleId: string): Promise<void> {
   const authors = article.authors.map((a) => a.name).join(", ");
   const keywords = article.keywords.map((k) => k.keyword.label).join(", ");
 
-  // Ensure a rowid mapping exists
-  await db.$executeRaw`INSERT OR IGNORE INTO article_fts_map (article_id) VALUES (${articleId})`;
-  const rows = await db.$queryRaw<{ rowid: bigint }[]>`
-    SELECT rowid FROM article_fts_map WHERE article_id = ${articleId}`;
-  const rowid = Number(rows[0].rowid);
-
-  // Contentless FTS5: delete then insert
   try {
-    await db.$executeRaw`INSERT INTO article_fts (article_fts, rowid, title, abstract, authors, keywords)
-      VALUES ('delete', ${rowid}, '', '', '', '')`;
+    // Ensure a rowid mapping exists (SQLite only)
+    await db.$executeRaw`INSERT OR IGNORE INTO article_fts_map (article_id) VALUES (${articleId})`;
+    const rows = await db.$queryRaw<{ rowid: bigint }[]>`
+      SELECT rowid FROM article_fts_map WHERE article_id = ${articleId}`;
+    if (rows && rows.length > 0) {
+      const rowid = Number(rows[0].rowid);
+
+      // Contentless FTS5: delete then insert
+      try {
+        await db.$executeRaw`INSERT INTO article_fts (article_fts, rowid, title, abstract, authors, keywords)
+          VALUES ('delete', ${rowid}, '', '', '', '')`;
+      } catch {
+        // row may not exist yet — fine
+      }
+      await db.$executeRaw`INSERT INTO article_fts (rowid, title, abstract, authors, keywords)
+        VALUES (${rowid}, ${article.title}, ${article.abstract}, ${authors}, ${keywords})`;
+    }
   } catch {
-    // row may not exist yet — fine
+    // Non-SQLite database (PostgreSQL) or FTS table does not exist; silent fallback
   }
-  await db.$executeRaw`INSERT INTO article_fts (rowid, title, abstract, authors, keywords)
-    VALUES (${rowid}, ${article.title}, ${article.abstract}, ${authors}, ${keywords})`;
 }
 
 export async function removeFromIndex(articleId: string): Promise<void> {
-  const rows = await db.$queryRaw<{ rowid: bigint }[]>`
-    SELECT rowid FROM article_fts_map WHERE article_id = ${articleId}`;
-  if (rows.length === 0) return;
-  const rowid = Number(rows[0].rowid);
   try {
-    await db.$executeRaw`INSERT INTO article_fts (article_fts, rowid, title, abstract, authors, keywords)
-      VALUES ('delete', ${rowid}, '', '', '', '')`;
+    const rows = await db.$queryRaw<{ rowid: bigint }[]>`
+      SELECT rowid FROM article_fts_map WHERE article_id = ${articleId}`;
+    if (rows.length === 0) return;
+    const rowid = Number(rows[0].rowid);
+    try {
+      await db.$executeRaw`INSERT INTO article_fts (article_fts, rowid, title, abstract, authors, keywords)
+        VALUES ('delete', ${rowid}, '', '', '', '')`;
+    } catch {
+      // not indexed — fine
+    }
   } catch {
-    // not indexed — fine
+    // Non-SQLite database fallback
   }
 }
 
@@ -106,11 +116,16 @@ export async function searchArticles(
       }
     }
     if (ftsIds === null) {
-      const term = `%${filters.query.trim()}%`;
+      const term = filters.query.trim();
       const likeRows = await db.article.findMany({
         where: {
           status: "PUBLISHED",
-          OR: [{ title: { contains: term.slice(1, -1) } }, { abstract: { contains: term.slice(1, -1) } }],
+          OR: [
+            { title: { contains: term, mode: "insensitive" } },
+            { abstract: { contains: term, mode: "insensitive" } },
+            { authors: { some: { name: { contains: term, mode: "insensitive" } } } },
+            { keywords: { some: { keyword: { label: { contains: term, mode: "insensitive" } } } } },
+          ],
         },
         select: { id: true },
         take: 500,

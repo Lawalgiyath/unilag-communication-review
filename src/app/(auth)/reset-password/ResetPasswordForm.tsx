@@ -14,7 +14,23 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
   return (
     <form action={formAction} className="mt-6 space-y-4" noValidate>
-      <input type="hidden" name="token" value={token} />
+      <div className="field">
+        <label htmlFor="reset-token" className="field-label">
+          Security Reset Code / Token <span aria-hidden="true" className="text-error">*</span>
+        </label>
+        <input
+          id="reset-token"
+          type="text"
+          name="token"
+          defaultValue={token}
+          placeholder="Paste the security code from your email"
+          required
+          className="font-mono text-sm bg-neutral-50"
+        />
+        <span className="field-hint">
+          Check your email for the security code sent by the editorial office.
+        </span>
+      </div>
 
       {state.errors?.form && (
         <div className="alert alert-error" role="alert">

@@ -1,10 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
-import { requireSession } from "@/lib/auth";
-import { updateProfileAction, updatePasswordAction } from "./actions";
+import { useState, useActionState } from "react";
+import { updateProfileAction, updatePasswordAction, requestPasswordResetEmailAction } from "./actions";
 import type { ProfileState, PasswordState } from "./actions";
-import { use } from "react";
 
 // This page is a server component wrapper that passes user data
 export { ProfilePageClient as default };
@@ -12,6 +10,21 @@ export { ProfilePageClient as default };
 function ProfilePageClient({ user }: { user: { name: string; title: string | null; affiliation: string | null; orcid: string | null; bio?: string | null; country?: string | null; email: string } }) {
   const [profileState, profileAction, profilePending] = useActionState<ProfileState, FormData>(updateProfileAction, {});
   const [pwState, pwAction, pwPending] = useActionState<PasswordState, FormData>(updatePasswordAction, {});
+  const [resetEmailState, setResetEmailState] = useState<{ loading: boolean; message?: string; error?: string }>({ loading: false });
+
+  async function handleRequestResetEmail() {
+    setResetEmailState({ loading: true });
+    try {
+      const res = await requestPasswordResetEmailAction();
+      if (res.success) {
+        setResetEmailState({ loading: false, message: res.message });
+      } else {
+        setResetEmailState({ loading: false, error: res.error ?? "Failed to send reset email" });
+      }
+    } catch {
+      setResetEmailState({ loading: false, error: "An unexpected error occurred" });
+    }
+  }
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -106,6 +119,34 @@ function ProfilePageClient({ user }: { user: { name: string; title: string | nul
             {pwPending ? "Updating…" : "Update password"}
           </button>
         </form>
+
+        <div className="mt-8 pt-5 border-t border-hairline">
+          <h3 className="text-sm font-semibold text-ink mb-1">
+            Prefer a secure reset code sent to your email?
+          </h3>
+          <p className="text-xs text-secondary mb-3">
+            If you have forgotten your current password, you can request a one-time secure reset link and code sent to your registered email ({user.email}).
+          </p>
+          {resetEmailState.message && (
+            <div className="alert alert-success mb-3 text-xs">
+              {resetEmailState.message}{" "}
+              <a href="/reset-password" className="font-semibold underline ml-1">
+                Go to reset page
+              </a>
+            </div>
+          )}
+          {resetEmailState.error && (
+            <div className="alert alert-error mb-3 text-xs">{resetEmailState.error}</div>
+          )}
+          <button
+            type="button"
+            onClick={handleRequestResetEmail}
+            disabled={resetEmailState.loading}
+            className="btn btn-outline text-xs py-2 px-3"
+          >
+            {resetEmailState.loading ? "Sending reset code..." : "Send password reset code to my email"}
+          </button>
+        </div>
       </section>
     </div>
   );

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -144,6 +144,7 @@ model StoredFile {
   sizeBytes    Int
   kind         String // ANONYMIZED_MANUSCRIPT | TITLE_PAGE | REVIEW_ATTACHMENT | TYPESET_PDF
   uploadedById String?
+  fileData     Bytes?
   createdAt    DateTime @default(now())
 
   uploadedBy          User?               @relation(fields: [uploadedById], references: [id])

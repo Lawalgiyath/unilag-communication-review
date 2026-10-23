@@ -3,7 +3,10 @@ import fs from "node:fs";
 import path from "node:path";
 
 function resolveDatabaseUrl(): string {
-  const rawUrl = process.env.DATABASE_URL;
+  const rawUrl =
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.PRISMA_DATABASE_URL;
   if (
     rawUrl &&
     (rawUrl.startsWith("postgres://") ||

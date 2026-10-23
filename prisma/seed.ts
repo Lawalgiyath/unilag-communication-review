@@ -307,20 +307,24 @@ async function main() {
     db.userRole.deleteMany(),
     db.user.deleteMany(),
   ]);
-  await db.$executeRawUnsafe(`DROP TABLE IF EXISTS article_fts`);
-  await db.$executeRawUnsafe(`DROP TABLE IF EXISTS article_fts_map`);
-  await db.$executeRawUnsafe(`
-    CREATE VIRTUAL TABLE article_fts USING fts5(
-      title, abstract, authors, keywords,
-      content='', tokenize='porter unicode61'
-    )
-  `);
-  await db.$executeRawUnsafe(`
-    CREATE TABLE article_fts_map (
-      rowid INTEGER PRIMARY KEY AUTOINCREMENT,
-      article_id TEXT UNIQUE NOT NULL
-    )
-  `);
+  try {
+    await db.$executeRawUnsafe(`DROP TABLE IF EXISTS article_fts`);
+    await db.$executeRawUnsafe(`DROP TABLE IF EXISTS article_fts_map`);
+    await db.$executeRawUnsafe(`
+      CREATE VIRTUAL TABLE article_fts USING fts5(
+        title, abstract, authors, keywords,
+        content='', tokenize='porter unicode61'
+      )
+    `);
+    await db.$executeRawUnsafe(`
+      CREATE TABLE article_fts_map (
+        rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+        article_id TEXT UNIQUE NOT NULL
+      )
+    `);
+  } catch {
+    // Non-SQLite database (PostgreSQL); skip FTS virtual tables
+  }
 
   // ---- settings ----
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -496,6 +500,7 @@ async function main() {
         sizeBytes: pdfBytes.length,
         kind: "TYPESET_PDF",
         uploadedById: admin.id,
+        fileData: Buffer.from(pdfBytes),
       },
     });
 
@@ -589,14 +594,20 @@ async function main() {
       });
     }
 
-    // FTS index
-    await db.$executeRaw`INSERT OR IGNORE INTO article_fts_map (article_id) VALUES (${article.id})`;
-    const rows = await db.$queryRaw<{ rowid: bigint }[]>`
-      SELECT rowid FROM article_fts_map WHERE article_id = ${article.id}`;
-    const rowid = Number(rows[0].rowid);
-    const authorsStr = art.authors.map((a) => `${a.first} ${a.last}`).join(", ");
-    await db.$executeRaw`INSERT INTO article_fts (rowid, title, abstract, authors, keywords)
-      VALUES (${rowid}, ${art.title}, ${art.abstract}, ${authorsStr}, ${art.keywords.join(", ")})`;
+    // FTS index (SQLite only)
+    try {
+      await db.$executeRaw`INSERT OR IGNORE INTO article_fts_map (article_id) VALUES (${article.id})`;
+      const rows = await db.$queryRaw<{ rowid: bigint }[]>`
+        SELECT rowid FROM article_fts_map WHERE article_id = ${article.id}`;
+      if (rows && rows.length > 0) {
+        const rowid = Number(rows[0].rowid);
+        const authorsStr = art.authors.map((a) => `${a.first} ${a.last}`).join(", ");
+        await db.$executeRaw`INSERT INTO article_fts (rowid, title, abstract, authors, keywords)
+          VALUES (${rowid}, ${art.title}, ${art.abstract}, ${authorsStr}, ${art.keywords.join(", ")})`;
+      }
+    } catch {
+      // Non-SQLite database fallback
+    }
   }
 
   const articleCount = await db.article.count();

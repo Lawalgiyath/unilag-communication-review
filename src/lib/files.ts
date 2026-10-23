@@ -74,9 +74,14 @@ export async function saveUpload(opts: {
   }
 
   const storedName = `${createId()}${ext}`;
-  const dir = path.join(uploadsRoot(), subdirFor(kind));
-  await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, storedName), buffer);
+  try {
+    const dir = path.join(uploadsRoot(), subdirFor(kind));
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, storedName), buffer);
+  } catch (err) {
+    // Read-only filesystem or serverless environment: fileData in DB ensures persistence
+    console.warn("Could not write upload to disk (expected on serverless):", err);
+  }
 
   const record = await db.storedFile.create({
     data: {
@@ -86,6 +91,7 @@ export async function saveUpload(opts: {
       sizeBytes: file.size,
       kind,
       uploadedById,
+      fileData: buffer,
     },
   });
   return { id: record.id, filename: storedName };
@@ -108,6 +114,9 @@ export async function fileResponse(opts: {
   cacheControl?: string;
 }): Promise<Response | null> {
   const filePath = storedFilePath(opts.kind, opts.filename);
+  const disposition = opts.inline ? "inline" : "attachment";
+
+  // 1. Try serving from disk
   try {
     const info = await stat(filePath);
     const nodeStream = createReadStream(filePath);
@@ -125,7 +134,6 @@ export async function fileResponse(opts: {
         nodeStream.destroy();
       },
     });
-    const disposition = opts.inline ? "inline" : "attachment";
     return new Response(stream, {
       status: 200,
       headers: {
@@ -136,6 +144,27 @@ export async function fileResponse(opts: {
       },
     });
   } catch {
+    // 2. If not on disk (serverless Vercel), serve from database fileData
+    try {
+      const safe = path.basename(opts.filename);
+      const dbFile = await db.storedFile.findFirst({
+        where: { filename: safe },
+        select: { fileData: true, sizeBytes: true },
+      });
+      if (dbFile?.fileData) {
+        return new Response(Buffer.from(dbFile.fileData), {
+          status: 200,
+          headers: {
+            "Content-Type": opts.mimeType,
+            "Content-Length": String(dbFile.fileData.length),
+            "Content-Disposition": `${disposition}; filename="${opts.downloadName.replace(/[^\w.\-]/g, "_")}"`,
+            "Cache-Control": opts.cacheControl ?? "private, no-store",
+          },
+        });
+      }
+    } catch (dbErr) {
+      console.error("Failed to read file from database:", dbErr);
+    }
     return null;
   }
 }

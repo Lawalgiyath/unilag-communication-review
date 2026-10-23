@@ -12,42 +12,152 @@ export interface EmailMessage {
   to: string;
   subject: string;
   text: string;
+  html?: string;
   template: string; // template identifier for the EmailLog
+}
+
+export function cleanEmailText(str: string): string {
+  if (!str) return "";
+  return str
+    .replace(/[\u2014\u2013]/g, "-") // replace em-dash and en-dash with standard hyphen
+    .replace(/&mdash;|&ndash;/g, "-")
+    .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, ""); // strip emojis
 }
 
 function transporter() {
   const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS?.replace(/\s+/g, "");
+
+  // 1. Direct Gmail Support (via service: "gmail")
+  if (host === "smtp.gmail.com" || user?.endsWith("@gmail.com")) {
+    if (!user || !pass) return null;
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: { user, pass },
+    });
+  }
+
+  // 2. Direct SendGrid API key support
+  const sendgridKey = process.env.SENDGRID_API_KEY;
+  if (sendgridKey) {
+    return nodemailer.createTransport({
+      host: "smtp.sendgrid.net",
+      port: 587,
+      auth: {
+        user: "apikey",
+        pass: sendgridKey,
+      },
+    });
+  }
+
+  // 3. Generic SMTP configuration (UNILAG relay or other SMTP)
   if (!host) return null;
   return nodemailer.createTransport({
     host,
     port: Number(process.env.SMTP_PORT ?? 587),
     secure: Number(process.env.SMTP_PORT ?? 587) === 465,
-    auth: process.env.SMTP_USER
-      ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-      : undefined,
+    auth: user && pass ? { user, pass } : undefined,
   });
+}
+
+export function brandedEmailHtml(opts: {
+  title: string;
+  preheader?: string;
+  bodyHtml: string;
+  ctaText?: string;
+  ctaUrl?: string;
+}): string {
+  const ctaButton =
+    opts.ctaText && opts.ctaUrl
+      ? `
+    <div style="margin: 28px 0; text-align: center;">
+      <a href="${opts.ctaUrl}" style="background-color: #7b1113; color: #ffffff; text-decoration: none; padding: 12px 24px; font-size: 13px; font-weight: 600; border-radius: 4px; display: inline-block; letter-spacing: 0.05em; text-transform: uppercase;">
+        ${opts.ctaText}
+      </a>
+    </div>
+  `
+      : "";
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${opts.title}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f7f6f2; margin: 0; padding: 24px; color: #1a1a1a; line-height: 1.6;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td align="center">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #ffffff; border: 1px solid #e5e5e0; border-radius: 6px; overflow: hidden;">
+          <tr>
+            <td style="background-color: #7b1113; padding: 24px 32px; border-bottom: 3px solid #d4af37;">
+              <h2 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em;">
+                UNILAG Communication Review
+              </h2>
+              <p style="color: #f3d9b1; margin: 4px 0 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;">
+                Faculty of Communication and Media Studies, University of Lagos
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 32px; font-size: 15px; color: #2d2d2d;">
+              ${cleanEmailText(opts.bodyHtml)}
+              ${ctaButton}
+              <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 28px 0;" />
+              <p style="font-size: 13px; color: #666666; margin: 0;">
+                Warm regards,<br />
+                <strong>Editorial Office</strong><br />
+                UNILAG Communication Review<br />
+                <a href="https://unilag.edu.ng" style="color: #7b1113; text-decoration: none;">University of Lagos, Nigeria</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #faf9f6; padding: 16px 32px; font-size: 11px; color: #888888; text-align: center; border-top: 1px solid #e5e5e0;">
+              This is an automated notification from UNILAG Communication Review (ISSN: 1597-0299, E-ISSN: 3027-1851).
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
 }
 
 export async function sendEmail(msg: EmailMessage): Promise<void> {
   const from =
     process.env.SMTP_FROM ??
-    "UNILAG Communication Review <no-reply@localhost>";
+    "UNILAG Communication Review <lawalgiyath200716@gmail.com>";
   const t = transporter();
+
+  const sanitizedSubject = cleanEmailText(msg.subject);
+  const sanitizedText = cleanEmailText(msg.text);
+  const sanitizedHtml = msg.html ? cleanEmailText(msg.html) : undefined;
 
   if (!t) {
     console.log(
-      `[email:dev] ${JSON.stringify({ to: msg.to, subject: msg.subject, text: msg.text }, null, 2)}`
+      `[email:dev] ${JSON.stringify({ to: msg.to, subject: sanitizedSubject, text: sanitizedText }, null, 2)}`
     );
-    await safeLog(msg, "DEV_LOGGED", null);
+    await safeLog({ ...msg, subject: sanitizedSubject, text: sanitizedText }, "DEV_LOGGED", null);
     return;
   }
 
   try {
-    await t.sendMail({ from, to: msg.to, subject: msg.subject, text: msg.text });
-    await safeLog(msg, "SENT", null);
+    await t.sendMail({
+      from,
+      to: msg.to,
+      subject: sanitizedSubject,
+      text: sanitizedText,
+      html: sanitizedHtml,
+    });
+    await safeLog({ ...msg, subject: sanitizedSubject, text: sanitizedText }, "SENT", null);
   } catch (err) {
-    console.error(`[email:failed] to=${msg.to} subject=${msg.subject}`, err);
-    await safeLog(msg, "FAILED", err instanceof Error ? err.message : String(err));
+    console.error(`[email:failed] to=${msg.to} subject=${sanitizedSubject}`, err);
+    await safeLog({ ...msg, subject: sanitizedSubject, text: sanitizedText }, "FAILED", err instanceof Error ? err.message : String(err));
   }
 }
 
