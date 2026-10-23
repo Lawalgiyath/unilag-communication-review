@@ -6,7 +6,11 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "15mb",
     },
   },
+  outputFileTracingIncludes: {
+    "/**": ["./prisma/journal-template.db"],
+  },
   poweredByHeader: false,
 };
 
 export default nextConfig;
+

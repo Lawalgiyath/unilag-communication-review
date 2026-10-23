@@ -53,33 +53,49 @@ export async function registerAction(
 
   const d = parsed.data;
 
-  const existing = await db.user.findUnique({ where: { email: d.email } });
-  if (existing) {
-    return { errors: { email: ["An account with this email already exists."] } };
+  const normalizedEmail = d.email.toLowerCase().trim();
+
+  try {
+    const existing = await db.user.findUnique({ where: { email: normalizedEmail } });
+    if (existing) {
+      return { errors: { email: ["An account with this email already exists."] } };
+    }
+
+    const passwordHash = await hashPassword(d.password);
+    const user = await db.user.create({
+      data: {
+        name: d.name,
+        title: d.title || null,
+        affiliation: d.affiliation,
+        orcid: d.orcid || null,
+        email: normalizedEmail,
+        passwordHash,
+        isActive: true,
+      },
+    });
+
+    await db.userRole.create({ data: { userId: user.id, role: "AUTHOR" } });
+
+    await sendEmail({
+      to: normalizedEmail,
+      subject: `Welcome to ${JOURNAL.title}`,
+      text: `Dear ${d.name},\n\nYour account has been created. You can now log in and submit manuscripts at ${process.env.NEXT_PUBLIC_SITE_URL ?? "https://unilag-communication-review.vercel.app"}.\n\nWarm regards,\n${JOURNAL.title} Editorial Office`,
+      template: "welcome",
+    });
+
+    await createSession(user.id);
+  } catch (error) {
+    console.error("Registration error:", error);
+    return {
+      errors: {
+        email: [
+          error instanceof Error
+            ? `Unable to complete registration: ${error.message}`
+            : "Registration could not be completed. Please try again.",
+        ],
+      },
+    };
   }
 
-  const passwordHash = await hashPassword(d.password);
-  const user = await db.user.create({
-    data: {
-      name: d.name,
-      title: d.title || null,
-      affiliation: d.affiliation,
-      orcid: d.orcid || null,
-      email: d.email,
-      passwordHash,
-      isActive: true,
-    },
-  });
-
-  await db.userRole.create({ data: { userId: user.id, role: "AUTHOR" } });
-
-  await sendEmail({
-    to: d.email,
-    subject: `Welcome to ${JOURNAL.title}`,
-    text: `Dear ${d.name},\n\nYour account has been created. You can now log in and submit manuscripts at ${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}.\n\nWarm regards,\n${JOURNAL.title} Editorial Office`,
-    template: "welcome",
-  });
-
-  await createSession(user.id);
   redirect("/dashboard");
 }

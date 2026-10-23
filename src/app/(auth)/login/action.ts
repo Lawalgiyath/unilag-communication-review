@@ -31,19 +31,34 @@ export async function loginAction(
   }
 
   const { email, password, next } = parsed.data;
-
-  const user = await db.user.findUnique({ where: { email } });
-  if (!user || !user.isActive) {
-    return { errors: { form: ["Invalid email or password."] } };
-  }
-
-  const valid = await verifyPassword(password, user.passwordHash);
-  if (!valid) {
-    return { errors: { form: ["Invalid email or password."] } };
-  }
-
-  await createSession(user.id);
-
   const destination = next && next.startsWith("/") ? next : "/dashboard";
+
+  try {
+    const user = await db.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+    });
+    if (!user || !user.isActive) {
+      return { errors: { form: ["Invalid email or password."] } };
+    }
+
+    const valid = await verifyPassword(password, user.passwordHash);
+    if (!valid) {
+      return { errors: { form: ["Invalid email or password."] } };
+    }
+
+    await createSession(user.id);
+  } catch (error) {
+    console.error("Login action error:", error);
+    return {
+      errors: {
+        form: [
+          error instanceof Error
+            ? `Login error: ${error.message}`
+            : "Unable to sign in. Please try again.",
+        ],
+      },
+    };
+  }
+
   redirect(destination);
 }
