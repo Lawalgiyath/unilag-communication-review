@@ -12,6 +12,7 @@ import {
   SPECIAL_ISSUE_NUMBER,
   SPECIAL_ISSUE_YEAR,
 } from "./seed-data";
+import { formatAuthorName } from "../src/lib/author-name";
 
 const db = new PrismaClient();
 
@@ -228,13 +229,13 @@ const BOARD = [
     order: 1,
   },
   {
-    name: "Prof. Oloruntola Sunday",
+    name: "Prof. Sunday Oloruntola",
     role: "Editor-in-Chief",
     affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
     order: 2,
   },
   {
-    name: "Dr. Unwana Samuel Akpan",
+    name: "Unwana Samuel Akpan, Ph.D.",
     role: "Editor",
     affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
     order: 3,
@@ -246,13 +247,13 @@ const BOARD = [
     order: 4,
   },
   {
-    name: "Prof. Ismail Ibraheem",
+    name: "Prof. Ishmael Ibrahim",
     role: "Member",
     affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
     order: 5,
   },
   {
-    name: "Prof. Popoola Ibitayo Samuel",
+    name: "Dr. Tayo Popoola",
     role: "Member",
     affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
     order: 6,
@@ -267,29 +268,9 @@ const ANNOUNCEMENTS = [
     publishedAt: new Date("2026-10-22"),
     body: `The Faculty of Communication and Media Studies, University of Lagos, is proud to announce the publication of **Volume 9, Number 2 (2026)** — our Special Issue titled **Platforms, Power, and Polls: Perspectives Ahead of Nigeria’s 2027 General Elections**.
 
-Guest Edited by **Dr. Bisi Crown Olawuyi** (University of Ibadan), with Editor **Dr. Unwana Samuel Akpan** and Editor-in-Chief **Prof. Oloruntola Sunday**, this special issue features 10 peer-reviewed research articles addressing youth digital activism, electoral credibility, real-time result transmission, broadcast journalism, musical satire, and artificial intelligence in Nigerian politics.
+Guest Edited by **Dr. Bisi Crown Olawuyi** (University of Ibadan), with Editor **Dr. Unwana Samuel Akpan** and Editor-in-Chief **Prof. Sunday Oloruntola**, this special issue features 10 peer-reviewed research articles addressing youth digital activism, electoral credibility, real-time result transmission, broadcast journalism, musical satire, and artificial intelligence in Nigerian politics.
 
 All articles are published open access with official Zenodo DOIs and available for immediate reading and PDF download. Browse the [Current Issue](/current) to access the table of contents.`,
-  },
-  {
-    slug: "call-for-papers-vol-10",
-    title: "Call for Papers — Volume 10: Communication, AI and African Futures",
-    kind: "CALL_FOR_PAPERS",
-    publishedAt: new Date("2026-10-15"),
-    body: `UNILAG Communication Review invites submissions for our upcoming volume, with a special focus on **Communication, Artificial Intelligence, and African Futures**.
-
-We welcome original research articles, review articles, and commentaries. All submissions undergo double-blind peer review.
-
-Submit through the journal's online submission portal. General submissions outside the special focus remain welcome on a rolling basis.`,
-  },
-  {
-    slug: "journal-indexing-update",
-    title: "Indexing and Digital Visibility Update",
-    kind: "NEWS",
-    publishedAt: new Date("2026-10-10"),
-    body: `As part of our commitment to global visibility, all articles published in UNILAG Communication Review now carry full bibliographic metadata for indexing services, including Google Scholar citation tags, Zenodo DOIs, and OAI-PMH harvesting support for library aggregators worldwide.
-
-Authors can expect their published work to be discoverable through major academic search engines and international indexes.`,
   },
 ];
 
@@ -300,6 +281,7 @@ async function main() {
 
   // ---- wipe (idempotent reseeding) ----
   await db.$transaction([
+    db.passwordResetToken.deleteMany(),
     db.review.deleteMany(),
     db.reviewAssignment.deleteMany(),
     db.decision.deleteMany(),
@@ -485,7 +467,7 @@ async function main() {
     // generate PDF with real text
     const pdfBytes = await makeSeedPdf({
       title: art.title,
-      authors: art.authors.map((a) => (a.title ? `${a.title} ${a.first} ${a.last}` : `${a.first} ${a.last}`)),
+      authors: art.authors.map((a) => formatAuthorName(a)),
       journalTitle: JOURNAL_TITLE,
       issn: ISSN,
       volume: SPECIAL_ISSUE_VOLUME,
@@ -540,7 +522,7 @@ async function main() {
         submittedAt: received,
         authors: {
           create: art.authors.map((a, idx) => ({
-            name: a.title ? `${a.title} ${a.first} ${a.last}` : `${a.first} ${a.last}`,
+            name: formatAuthorName(a),
             email: a.email || `${a.first.toLowerCase().replace(/[^a-z]/g, "")}@example.edu.ng`,
             affiliation: a.affiliation,
             orcid: a.orcid || null,
@@ -578,7 +560,7 @@ async function main() {
         orderInIssue: j,
         authors: {
           create: art.authors.map((a, idx) => ({
-            name: a.title ? `${a.title} ${a.first} ${a.last}` : `${a.first} ${a.last}`,
+            name: formatAuthorName(a),
             firstName: a.first,
             lastName: a.last,
             email: a.email || null,

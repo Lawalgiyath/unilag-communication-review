@@ -10,7 +10,6 @@ import {
 import {
   getCurrentIssue,
   getLatestArticles,
-  getMostReadArticles,
   DEMO_ANNOUNCEMENTS,
   type DemoArticle,
 } from "@/lib/demo-data";
@@ -25,24 +24,15 @@ function toListItem(a: DemoArticle): ArticleListItemData {
     authorNames: a.authors.map((x) => x.name),
     firstPage: a.firstPage,
     lastPage: a.lastPage,
-    viewsCount: a.viewsCount,
     volume: a.volumeNumber,
     issue: a.issueNumber,
     year: a.volumeYear,
   };
 }
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tab?: string }>;
-}) {
-  const { tab } = await searchParams;
-  const activeTab = tab === "most-read" ? "most-read" : "latest";
-
+export default async function HomePage() {
   const currentIssue = getCurrentIssue();
-  const tabArticles =
-    activeTab === "most-read" ? getMostReadArticles(6) : getLatestArticles(6);
+  const latestArticles = getLatestArticles(10);
   const announcements = DEMO_ANNOUNCEMENTS.slice(0, 3);
 
   return (
@@ -99,52 +89,25 @@ export default async function HomePage({
           </div>
         </section>
 
-        {/* ===== Latest / Most Read tabs ===== */}
+        {/* ===== Articles in this Issue ===== */}
         <section className="mt-12" aria-labelledby="browse-heading">
-          <div className="flex items-end justify-between border-b border-hairline">
-            <h2 id="browse-heading" className="sr-only">
-              Browse articles
+          <div className="flex items-end justify-between border-b border-hairline pb-2">
+            <h2 id="browse-heading" className="text-[13px] font-semibold uppercase tracking-[0.1em] text-maroon border-b-2 border-maroon pb-2 -mb-2">
+              Articles in this Issue
             </h2>
-            <div className="flex gap-1" role="tablist" aria-label="Article lists">
-              <Link
-                href="/?tab=latest"
-                role="tab"
-                aria-selected={activeTab === "latest"}
-                className={`px-4 py-2 text-[13px] font-semibold uppercase tracking-[0.1em] ${
-                  activeTab === "latest"
-                    ? "border-b-2 border-maroon text-maroon"
-                    : "text-secondary hover:text-ink"
-                }`}
-              >
-                Latest
-              </Link>
-              <Link
-                href="/?tab=most-read"
-                role="tab"
-                aria-selected={activeTab === "most-read"}
-                className={`px-4 py-2 text-[13px] font-semibold uppercase tracking-[0.1em] ${
-                  activeTab === "most-read"
-                    ? "border-b-2 border-maroon text-maroon"
-                    : "text-secondary hover:text-ink"
-                }`}
-              >
-                Most Read
-              </Link>
-            </div>
             <Link
               href="/archives"
-              className="pb-2 text-xs font-semibold uppercase tracking-[0.1em] text-maroon hover:underline"
+              className="text-xs font-semibold uppercase tracking-[0.1em] text-maroon hover:underline"
             >
               All issues →
             </Link>
           </div>
           <div>
-            {tabArticles.map((a) => (
+            {latestArticles.map((a) => (
               <ArticleListItem
                 key={a.id}
                 article={toListItem(a)}
                 showIssue
-                showViews={activeTab === "most-read"}
               />
             ))}
           </div>
@@ -184,11 +147,6 @@ export default async function HomePage({
           <ul className="mt-3">
             {announcements.map((ann) => (
               <li key={ann.id} className="border-b border-hairline py-3 last:border-b-0">
-                {ann.kind === "CALL_FOR_PAPERS" && (
-                  <span className="mb-1 inline-block border border-gold px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-gold-dark">
-                    Call for Papers
-                  </span>
-                )}
                 <Link
                   href={`/announcements/${ann.slug}`}
                   className="block font-display text-base font-semibold leading-snug text-ink hover:text-maroon"

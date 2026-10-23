@@ -10,11 +10,12 @@ const initialState: LoginState = {};
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; reset?: string }>;
 }) {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(loginAction, initialState);
   const sp = use(searchParams);
   const next = sp?.next ?? "";
+  const resetSuccess = sp?.reset === "success";
 
   return (
     <div className="border border-hairline bg-white p-8">
@@ -24,6 +25,12 @@ export default function LoginPage({
       <p className="mt-1 text-sm text-secondary">
         Access your author, reviewer, or editor dashboard.
       </p>
+
+      {resetSuccess && (
+        <div className="alert alert-success mt-5" role="status">
+          Your password has been reset successfully. Please sign in with your new password.
+        </div>
+      )}
 
       {state.errors?.form && (
         <div className="alert alert-error mt-5" role="alert">

@@ -35,6 +35,7 @@ model User {
   paymentConfirmation Submission[]       @relation("PaymentConfirmedBy")
   events              SubmissionEvent[]
   updatedPages        Page[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model UserRole {
@@ -51,6 +52,18 @@ model Session {
   userId    String
   expiresAt DateTime
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }

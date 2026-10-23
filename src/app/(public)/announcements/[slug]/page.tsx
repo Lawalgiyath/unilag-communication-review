@@ -44,11 +44,6 @@ export default async function AnnouncementPage({
       </nav>
 
       <header className="mt-4">
-        {ann.kind === "CALL_FOR_PAPERS" && (
-          <div className="mb-3">
-            <Badge variant="gold">Call for Papers</Badge>
-          </div>
-        )}
         <h1 className="font-display text-3xl font-semibold leading-tight text-ink sm:text-4xl">
           {ann.title}
         </h1>

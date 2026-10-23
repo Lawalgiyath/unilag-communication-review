@@ -1260,7 +1260,7 @@ export const REAL_ARTICLES: SeedArticle[] = [
         "last": "Ukeje",
         "title": null,
         "email": "pukeje@yahoo.com",
-        "affiliation": "Department of Mass Communication, Faculty of Communication and Media Studies, University of Uyo, Uyo",
+        "affiliation": "Department of Mass Communication, Faculty of Communication and Media Studies, University of Uyo",
         "orcid": "0009-0003-1990-5694",
         "corresponding": true
       }
@@ -1399,7 +1399,7 @@ export const REAL_ARTICLES: SeedArticle[] = [
         "last": "Nwabuokei",
         "title": "Ph.D.",
         "email": "J.Nwabuokei@tees.ac.uk",
-        "affiliation": "Digital Media and Public Relations, School of Arts and Creative Industries, Teesside University",
+        "affiliation": "Digital Media and Public Relations, School of Arts and Creative Industries, Teesside University, UK",
         "orcid": "0000-0002-7769-5715",
         "corresponding": true
       }
@@ -1535,7 +1535,7 @@ export const REAL_ARTICLES: SeedArticle[] = [
         "last": "Nwagbara",
         "title": null,
         "email": "uunwagbara@gmail.com",
-        "affiliation": "Department of Advertising and Marketing Communications, Faculty of Communication and Media Studies, University of Uyo, Uyo",
+        "affiliation": "Department of Advertising and Marketing Communications, Faculty of Communication and Media Studies, University of Uyo",
         "orcid": null,
         "corresponding": true
       },
@@ -1544,7 +1544,7 @@ export const REAL_ARTICLES: SeedArticle[] = [
         "last": "Ukeje",
         "title": null,
         "email": "pukeje@yahoo.com",
-        "affiliation": "Department of Mass Communication, Faculty of Communication and Media Studies, University of Uyo, Uyo",
+        "affiliation": "Department of Mass Communication, Faculty of Communication and Media Studies, University of Uyo",
         "orcid": null,
         "corresponding": false
       },
@@ -1553,7 +1553,7 @@ export const REAL_ARTICLES: SeedArticle[] = [
         "last": "Okon",
         "title": null,
         "email": "daramfon.ime.okon@gmail.com",
-        "affiliation": "Department of Information and Media Studies, Faculty of Communication and Media Studies, University of Uyo, Uyo",
+        "affiliation": "Department of Information and Media Studies, Faculty of Communication and Media Studies, University of Uyo",
         "orcid": null,
         "corresponding": false
       }
@@ -1758,7 +1758,7 @@ export const REAL_ARTICLES: SeedArticle[] = [
         "last": "Nwagbara",
         "title": null,
         "email": "uunwagbara@gmail.com",
-        "affiliation": "Department of Advertising and Marketing Communications, Faculty of Communication and Media Studies, University of Uyo, Uyo",
+        "affiliation": "Department of Advertising and Marketing Communications, Faculty of Communication and Media Studies, University of Uyo",
         "orcid": null,
         "corresponding": true
       }

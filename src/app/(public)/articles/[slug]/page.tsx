@@ -176,17 +176,6 @@ export default async function ArticlePage({
             <dt className="text-xs uppercase tracking-[0.1em] text-secondary">Published online</dt>
             <dd className="mt-0.5 text-ink">{format(article.publishedOnline, "d MMMM yyyy")}</dd>
           </div>
-          <div>
-            <dt className="text-xs uppercase tracking-[0.1em] text-secondary">Views</dt>
-            <dd className="mt-0.5 text-ink">{article.viewsCount.toLocaleString()}</dd>
-          </div>
-          <div>
-            <dt className="text-xs uppercase tracking-[0.1em] text-secondary">History</dt>
-            <dd className="mt-0.5 text-ink">
-              Received {format(article.receivedDate, "d MMM yyyy")}; accepted{" "}
-              {format(article.acceptedDate, "d MMM yyyy")}
-            </dd>
-          </div>
           {article.doi && (
             <div className="col-span-2 sm:col-span-1">
               <dt className="text-xs uppercase tracking-[0.1em] text-secondary">DOI</dt>

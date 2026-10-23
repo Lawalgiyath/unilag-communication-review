@@ -4,7 +4,6 @@
  */
 
 import {
-  REFERENCE_POOL,
   SEED_ARTICLES,
   buildBodyParagraphs,
   SPECIAL_ISSUE_TITLE,
@@ -12,6 +11,7 @@ import {
   SPECIAL_ISSUE_NUMBER,
   SPECIAL_ISSUE_YEAR,
 } from "../../prisma/seed-data";
+import { formatAuthorName } from "./author-name";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,9 +45,6 @@ export interface DemoArticle {
   firstPage: number;
   lastPage: number;
   publishedOnline: Date;
-  receivedDate: Date;
-  acceptedDate: Date;
-  viewsCount: number;
   doi: string | null;
   status: "PUBLISHED";
   orderInIssue: number;
@@ -108,7 +105,6 @@ const VOLUME_DEFS = [
   },
 ];
 
-const VIEW_COUNTS = [412, 387, 293, 345, 421, 266, 388, 299, 340, 255];
 
 let globalArticleIndex = 0;
 const allArticles: DemoArticle[] = [];
@@ -128,15 +124,11 @@ SEED_ARTICLES.forEach((issueArticles, issueGroupIdx) => {
     const ai = globalArticleIndex++;
     const firstPage = a.firstPage ?? (1 + orderIdx * 20);
     const lastPage = a.lastPage ?? (firstPage + 18);
-    const received = new Date("2026-08-15");
-    const accepted = new Date("2026-10-10");
 
-    const refs = a.references && a.references.length > 0
-      ? a.references
-      : REFERENCE_POOL.slice(0, 10);
+    const refs = a.references ?? [];
 
     const authors: DemoAuthor[] = a.authors.map((au, i) => ({
-      name: au.title ? `${au.title} ${au.first} ${au.last}` : `${au.first} ${au.last}`,
+      name: formatAuthorName(au),
       firstName: au.first,
       lastName: au.last,
       affiliation: au.affiliation,
@@ -162,10 +154,7 @@ SEED_ARTICLES.forEach((issueArticles, issueGroupIdx) => {
       firstPage,
       lastPage,
       publishedOnline: pubDate,
-      receivedDate: received,
-      acceptedDate: accepted,
-      viewsCount: VIEW_COUNTS[ai % VIEW_COUNTS.length],
-      doi: a.doi || `10.5281/zenodo.1489200${orderIdx + 1}`,
+      doi: a.doi || null,
       status: "PUBLISHED" as const,
       orderInIssue: orderIdx,
       issueId,
@@ -235,12 +224,6 @@ export function getLatestArticles(n = 6): DemoArticle[] {
     .slice(0, n);
 }
 
-export function getMostReadArticles(n = 6): DemoArticle[] {
-  return [...DEMO_ARTICLES]
-    .sort((a, b) => b.viewsCount - a.viewsCount)
-    .slice(0, n);
-}
-
 export function getRelatedArticles(article: DemoArticle, n = 3): DemoArticle[] {
   const kwSlugs = new Set(article.keywords.map((k) => k.slug));
   return DEMO_ARTICLES.filter(
@@ -274,7 +257,7 @@ export interface DemoAnnouncement {
   slug: string;
   title: string;
   body: string;
-  kind: "NEWS" | "CALL_FOR_PAPERS";
+  kind: "NEWS";
   publishedAt: Date;
 }
 
@@ -290,28 +273,6 @@ Guest Edited by **Dr. Bisi Crown Olawuyi** (University of Ibadan), with Editor *
 All articles are published open access with official Zenodo DOIs and available for immediate reading and PDF download. Browse the [Current Issue](/current) to access the table of contents.`,
     kind: "NEWS",
     publishedAt: new Date("2026-10-22"),
-  },
-  {
-    id: "ann-2",
-    slug: "call-for-papers-vol-10",
-    title: "Call for Papers — Volume 10: Communication, AI and African Futures",
-    body: `UNILAG Communication Review invites submissions for our upcoming volume, with a special focus on **Communication, Artificial Intelligence, and African Futures**.
-
-We welcome original research articles, review articles, and commentaries. All submissions undergo double-blind peer review.
-
-Submit through the journal's online submission portal. General submissions outside the special focus remain welcome on a rolling basis.`,
-    kind: "CALL_FOR_PAPERS",
-    publishedAt: new Date("2026-10-15"),
-  },
-  {
-    id: "ann-3",
-    slug: "journal-indexing-update",
-    title: "Indexing and Digital Visibility Update",
-    body: `As part of our commitment to global visibility, all articles published in UNILAG Communication Review now carry full bibliographic metadata for indexing services, including Google Scholar citation tags, Zenodo DOIs, and OAI-PMH harvesting support for library aggregators worldwide.
-
-Authors can expect their published work to be discoverable through major academic search engines and international indexes.`,
-    kind: "NEWS",
-    publishedAt: new Date("2026-10-10"),
   },
 ];
 
@@ -341,7 +302,7 @@ export const DEMO_BOARD: DemoBoardMember[] = [
   },
   {
     id: "b2",
-    name: "Prof. Oloruntola Sunday",
+    name: "Prof. Sunday Oloruntola",
     role: "Editor-in-Chief",
     affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
     orcid: null,
@@ -349,7 +310,7 @@ export const DEMO_BOARD: DemoBoardMember[] = [
   },
   {
     id: "b3",
-    name: "Dr. Unwana Samuel Akpan",
+    name: "Unwana Samuel Akpan, Ph.D.",
     role: "Editor",
     affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
     orcid: null,
@@ -365,7 +326,7 @@ export const DEMO_BOARD: DemoBoardMember[] = [
   },
   {
     id: "b5",
-    name: "Prof. Ismail Ibraheem",
+    name: "Prof. Ishmael Ibrahim",
     role: "Member",
     affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
     orcid: null,
@@ -373,7 +334,7 @@ export const DEMO_BOARD: DemoBoardMember[] = [
   },
   {
     id: "b6",
-    name: "Prof. Popoola Ibitayo Samuel",
+    name: "Dr. Tayo Popoola",
     role: "Member",
     affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
     orcid: null,

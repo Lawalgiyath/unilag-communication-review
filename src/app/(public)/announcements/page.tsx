@@ -6,7 +6,7 @@ import { DEMO_ANNOUNCEMENTS } from "@/lib/demo-data";
 
 export const metadata: Metadata = {
   title: "Announcements",
-  description: "News and calls for papers from UNILAG Communication Review.",
+  description: "News and official notices from UNILAG Communication Review.",
 };
 
 export default function AnnouncementsPage() {
@@ -19,11 +19,6 @@ export default function AnnouncementsPage() {
       <div className="mt-8 space-y-0 divide-y divide-hairline">
         {DEMO_ANNOUNCEMENTS.map((ann) => (
           <article key={ann.id} className="py-6">
-            {ann.kind === "CALL_FOR_PAPERS" && (
-              <span className="mb-2 inline-block border border-gold px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-gold-dark">
-                Call for Papers
-              </span>
-            )}
             <h2 className="font-display text-xl font-semibold text-ink">
               <Link href={`/announcements/${ann.slug}`} className="hover:text-maroon">
                 {ann.title}
