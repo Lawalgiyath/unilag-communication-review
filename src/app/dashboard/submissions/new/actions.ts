@@ -199,6 +199,8 @@ export async function step3Action(_prev: Step3State, formData: FormData): Promis
 
 export type Step4State = { errors?: Record<string, string[]> };
 
+import { checkCrossrefDuplicates } from "@/lib/crossref";
+
 export async function step4Action(_prev: Step4State, formData: FormData): Promise<Step4State> {
   const user = await requireSession();
   const submissionId = formData.get("submissionId") as string;
@@ -222,15 +224,82 @@ export async function step4Action(_prev: Step4State, formData: FormData): Promis
     },
   });
 
-  const sub = await db.submission.findUnique({ where: { id: submissionId } });
+  const sub = await db.submission.findUnique({
+    where: { id: submissionId },
+    include: { authors: true },
+  });
+
   if (sub) {
+    const subRef = `UCR-${sub.submittedAt.getFullYear()}-${String(sub.number).padStart(4, "0")}`;
+    const appUrl = process.env.NEXTAUTH_URL ?? process.env.APP_URL ?? "https://unilag-communication-review.vercel.app";
+
+    // 1. Email corresponding author
     await sendEmail({
       to: user.email,
       subject: `Submission received: ${sub.title.slice(0, 60)}`,
-      text: `Dear ${user.name},\n\nThank you for submitting your manuscript to ${JOURNAL.title}. Your submission has been received and is under editorial review.\n\nSubmission reference: UCR-${sub.submittedAt.getFullYear()}-${String(sub.number).padStart(4, "0")}\n\nWe will contact you with updates on the progress of your submission.\n\nWarm regards,\n${JOURNAL.title} Editorial Office`,
+      text: `Dear ${user.name},\n\nThank you for submitting your manuscript to ${JOURNAL.title}. Your submission has been received and is under editorial review.\n\nSubmission reference: ${subRef}\n\nWe will contact you with updates on the progress of your submission.\n\nWarm regards,\n${JOURNAL.title} Editorial Office`,
       template: "submission_received",
     });
+
+    // 2. Alert all listed non-corresponding co-authors (COPE guidelines)
+    const coAuthors = sub.authors.filter((a) => !a.isCorresponding && a.email?.includes("@"));
+    for (const ca of coAuthors) {
+      const disputeUrl = `${appUrl}/submissions/dispute?id=${sub.id}&email=${encodeURIComponent(ca.email)}`;
+      const coAuthorText = `Dear ${ca.name},
+
+You have been listed as a co-author on a newly submitted manuscript to ${JOURNAL.title}:
+
+Title: "${sub.title}"
+Corresponding Author: ${user.name} (${user.email})
+Submission Reference: ${subRef}
+
+Under Committee on Publication Ethics (COPE) core practices, all contributing authors must approve manuscript submission and agree to the research content and authorship attribution.
+
+- If you approved this submission: No action is required.
+- If you did NOT authorize this submission, or if you dispute the authorship or research data: Please register an immediate dispute with our editorial office using the link below:
+
+${disputeUrl}
+
+Registering a dispute will flag the manuscript on the Editor-in-Chief queue and pause review pending investigation.
+
+Warm regards,
+Editorial Office
+${JOURNAL.title}
+University of Lagos`;
+
+      await sendEmail({
+        to: ca.email,
+        subject: `Co-authorship notification: ${sub.title.slice(0, 50)}`,
+        text: coAuthorText,
+        template: "coauthor_submission_notification",
+      });
+    }
+
+    // 3. Automated Crossref duplicate and plagiarism pre-screening
+    try {
+      const crossrefResult = await checkCrossrefDuplicates(sub.title);
+      if (crossrefResult.foundDuplicate && crossrefResult.matches.length > 0) {
+        const topMatch = crossrefResult.matches[0];
+        await db.submissionEvent.create({
+          data: {
+            submissionId: sub.id,
+            type: "CROSSREF_DUPLICATE_FLAG",
+            payload: JSON.stringify({
+              matchTitle: topMatch.title,
+              doi: topMatch.doi,
+              publisher: topMatch.publisher,
+              similarity: topMatch.similarity,
+              url: topMatch.url,
+              flaggedAt: new Date().toISOString(),
+            }),
+          },
+        });
+      }
+    } catch (crossrefErr) {
+      console.warn("[submission:crossref] Duplicate check error:", crossrefErr);
+    }
   }
 
   redirect(`/dashboard/submissions/${submissionId}?submitted=1`);
 }
+

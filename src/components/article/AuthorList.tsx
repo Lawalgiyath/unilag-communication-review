@@ -1,3 +1,5 @@
+import { InstitutionalBadge } from "@/components/common/InstitutionalBadge";
+
 /** ORCID icon (inline SVG, official green). */
 function OrcidIcon() {
   return (
@@ -56,6 +58,7 @@ export function AuthorList({ authors }: { authors: AuthorDisplay[] }) {
                   <OrcidIcon />
                 </a>
               )}
+
               {a.isCorresponding && a.email && (
                 <a
                   href={`mailto:${a.email}`}
@@ -66,6 +69,7 @@ export function AuthorList({ authors }: { authors: AuthorDisplay[] }) {
                   ✉
                 </a>
               )}
+              {a.email && <InstitutionalBadge email={a.email} showText={false} className="ml-1 inline-flex align-baseline" />}
               {i < authors.length - 1 && <span aria-hidden="true">,</span>}
             </li>
           );

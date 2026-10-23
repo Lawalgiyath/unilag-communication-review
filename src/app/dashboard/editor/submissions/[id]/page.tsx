@@ -6,6 +6,8 @@ import { db } from "@/lib/db";
 import { formatSubmissionNumber, SUBMISSION_STATUS_LABELS, RECOMMENDATION_LABELS, ARTICLE_TYPES } from "@/lib/constants-ext";
 import { TRANSITIONS } from "@/lib/workflow";
 import type { SubmissionStatus } from "@/lib/types";
+import { InstitutionalBadge } from "@/components/common/InstitutionalBadge";
+import { CrossrefScanButton } from "./CrossrefScanButton";
 
 export const metadata: Metadata = { title: "Editor: Submission" };
 export const dynamic = "force-dynamic";
@@ -45,6 +47,9 @@ export default async function EditorSubmissionPage({
   const allowedTransitions = TRANSITIONS[status] ?? [];
   const subRef = formatSubmissionNumber(sub.number, sub.submittedAt.getFullYear());
 
+  const disputeEvents = sub.events.filter((e) => e.type === "AUTHORSHIP_DISPUTED");
+  const duplicateEvents = sub.events.filter((e) => e.type === "CROSSREF_DUPLICATE_FLAG");
+
   return (
     <div className="mx-auto max-w-5xl">
       <nav className="text-xs text-secondary">
@@ -57,14 +62,115 @@ export default async function EditorSubmissionPage({
         <div className="flex-1">
           <p className="font-mono text-xs text-secondary">{subRef}</p>
           <h1 className="page-title mt-1">{sub.title}</h1>
-          <p className="page-subtitle">
-            {sub.correspondingAuthor.name} · {sub.correspondingAuthor.email}
-          </p>
+          <div className="page-subtitle flex items-center gap-2 flex-wrap">
+            <span>{sub.correspondingAuthor.name} · {sub.correspondingAuthor.email}</span>
+            <InstitutionalBadge email={sub.correspondingAuthor.email} />
+          </div>
         </div>
         <span className={`status-badge status-${sub.status} mt-1 shrink-0`}>
           {SUBMISSION_STATUS_LABELS[status]}
         </span>
       </div>
+
+      {/* COPE Authorship Dispute Alert Banner */}
+      {disputeEvents.length > 0 && (
+        <div className="mb-6 rounded-lg border-2 border-red-600 bg-red-50 p-5 text-red-900 shadow-sm">
+          <div className="flex items-start gap-3">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-600 text-white font-bold text-sm">
+              !
+            </span>
+            <div className="flex-1">
+              <h3 className="text-base font-bold text-red-950">
+                URGENT: Authorship Dispute Logged (COPE Protocol Required)
+              </h3>
+              <p className="mt-1 text-xs text-red-800">
+                Under Committee on Publication Ethics (COPE) core practices, a formal authorship objection or plagiarism claim has been lodged. Review and publication actions should be held until this dispute is resolved in writing.
+              </p>
+              <div className="mt-3 space-y-2">
+                {disputeEvents.map((ev) => {
+                  let payload: Record<string, string> = {};
+                  try {
+                    payload = JSON.parse(ev.payload || "{}");
+                  } catch {}
+                  return (
+                    <div key={ev.id} className="rounded border border-red-200 bg-white p-3 text-xs text-gray-800">
+                      <div className="flex items-center justify-between border-b border-gray-100 pb-1.5 mb-2 font-medium">
+                        <span className="text-red-700 font-semibold">
+                          Category: {payload.disputeCategory?.replace(/_/g, " ") || "Authorship Dispute"}
+                        </span>
+                        <span className="text-gray-500">{format(ev.createdAt, "d MMM yyyy, HH:mm")}</span>
+                      </div>
+                      <p>
+                        <strong>Disputing Party:</strong> {payload.reporterName || "Unknown"} (
+                        <a href={`mailto:${payload.reporterEmail}`} className="text-maroon underline">
+                          {payload.reporterEmail}
+                        </a>
+                        )
+                      </p>
+                      {payload.reporterAffiliation && <p><strong>Affiliation:</strong> {payload.reporterAffiliation}</p>}
+                      <div className="mt-2 text-gray-700 whitespace-pre-wrap bg-gray-50 p-2.5 rounded border border-gray-200">
+                        <strong>Statement:</strong> {payload.statement || "No statement text provided"}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Crossref Duplicate / Prior Publication Alert Banner */}
+      {duplicateEvents.length > 0 && (
+        <div className="mb-6 rounded-lg border-2 border-amber-500 bg-amber-50 p-5 text-amber-950 shadow-sm">
+          <div className="flex items-start gap-3">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500 text-white font-bold text-sm">
+              !
+            </span>
+            <div className="flex-1">
+              <h3 className="text-base font-bold text-amber-950">
+                Potential Prior Publication / Duplicate Detected via Crossref
+              </h3>
+              <p className="mt-1 text-xs text-amber-800">
+                Crossref automated screening identified existing publication(s) with high title similarity. Please review prior work to ensure originality and check for dual submission or plagiarism.
+              </p>
+              <div className="mt-3 space-y-2">
+                {duplicateEvents.map((ev) => {
+                  let payload: Record<string, any> = {};
+                  try {
+                    payload = JSON.parse(ev.payload || "{}");
+                  } catch {}
+                  return (
+                    <div key={ev.id} className="rounded border border-amber-200 bg-white p-3 text-xs text-gray-800">
+                      <div className="flex items-center justify-between border-b border-gray-100 pb-1.5 mb-1.5">
+                        <span className="font-semibold text-amber-800">
+                          Similarity Match: {Math.round((payload.similarity ?? 0) * 100)}%
+                        </span>
+                        <span className="text-gray-500">{format(ev.createdAt, "d MMM yyyy, HH:mm")}</span>
+                      </div>
+                      <p><strong>Matched Title:</strong> &ldquo;{payload.matchTitle}&rdquo;</p>
+                      {payload.publisher && <p><strong>Publisher:</strong> {payload.publisher}</p>}
+                      {payload.doi && (
+                        <p className="mt-1">
+                          <strong>DOI:</strong>{" "}
+                          <a
+                            href={payload.url || `https://doi.org/${payload.doi}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-maroon underline font-mono font-medium"
+                          >
+                            {payload.doi} ↗
+                          </a>
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         {/* Main column */}
@@ -217,6 +323,10 @@ export default async function EditorSubmissionPage({
                   </button>
                 </form>
               )}
+              <hr className="my-2 border-hairline" />
+              <div className="pt-1">
+                <CrossrefScanButton submissionId={id} />
+              </div>
             </div>
           </div>
 
@@ -237,12 +347,16 @@ export default async function EditorSubmissionPage({
           {/* Authors */}
           <div className="border border-hairline p-4">
             <p className="section-label mb-3">Authors</p>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-3 text-sm">
               {sub.authors.map((a) => (
-                <li key={a.id}>
-                  <span className="font-medium text-ink">{a.name}</span>
-                  {a.isCorresponding && <span className="ml-1 text-xs text-secondary">(corr.)</span>}
-                  {a.affiliation && <p className="text-secondary">{a.affiliation}</p>}
+                <li key={a.id} className="border-b border-gray-100 pb-2 last:border-b-0 last:pb-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-medium text-ink">{a.name}</span>
+                    {a.isCorresponding && <span className="text-xs text-secondary">(corr.)</span>}
+                    <InstitutionalBadge email={a.email} />
+                  </div>
+                  {a.affiliation && <p className="text-xs text-secondary">{a.affiliation}</p>}
+                  {a.email && <p className="text-xs text-gray-500 font-mono mt-0.5">{a.email}</p>}
                 </li>
               ))}
             </ul>

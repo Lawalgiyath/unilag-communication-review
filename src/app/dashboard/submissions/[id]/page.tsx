@@ -7,6 +7,7 @@ import { requireSession } from "@/lib/auth";
 import { SUBMISSION_STATUS_LABELS, formatSubmissionNumber } from "@/lib/types";
 import { ARTICLE_TYPES } from "@/lib/constants";
 import { ConfirmSubmitButton } from "@/components/common/ConfirmSubmitButton";
+import { InstitutionalBadge } from "@/components/common/InstitutionalBadge";
 
 export const metadata: Metadata = { title: "Submission Detail" };
 export const dynamic = "force-dynamic";
@@ -43,12 +44,24 @@ export default async function SubmissionDetailPage({
   const canRevise = sub.status === "REVISIONS_REQUESTED";
   const canWithdraw = !["PUBLISHED", "DESK_REJECTED", "REJECTED", "WITHDRAWN"].includes(sub.status);
   const latestDecision = sub.decisions[0];
+  const hasDispute = sub.events.some((e) => e.type === "AUTHORSHIP_DISPUTED");
 
   return (
     <div className="mx-auto max-w-3xl">
       {submitted === "1" && (
         <div className="alert alert-success mb-6">
           ✓ Your manuscript has been received. A confirmation has been sent to your email address.
+        </div>
+      )}
+
+      {hasDispute && (
+        <div className="alert alert-error mb-6 border-2 border-red-600 bg-red-50 text-red-900">
+          <p className="font-bold text-sm">
+            Ethical / Authorship Query Logged (COPE Procedure)
+          </p>
+          <p className="mt-1 text-xs text-red-800">
+            A formal authorship objection has been registered for this submission. In accordance with Committee on Publication Ethics (COPE) core practices, processing of this manuscript is currently held while the editorial office reviews the matter. The Editor-in-Chief will contact you directly via your registered email.
+          </p>
         </div>
       )}
 
@@ -147,14 +160,17 @@ export default async function SubmissionDetailPage({
           {/* Authors */}
           <div className="border border-hairline p-4">
             <p className="section-label mb-3">Authors</p>
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-3 text-sm">
               {sub.authors.map((a) => (
-                <li key={a.id}>
-                  <span className="font-medium text-ink">{a.name}</span>
-                  {a.isCorresponding && (
-                    <span className="ml-1 text-xs text-secondary">(corresponding)</span>
-                  )}
-                  {a.affiliation && <p className="text-secondary">{a.affiliation}</p>}
+                <li key={a.id} className="border-b border-gray-100 pb-2 last:border-b-0 last:pb-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-medium text-ink">{a.name}</span>
+                    {a.isCorresponding && (
+                      <span className="text-xs text-secondary">(corresponding)</span>
+                    )}
+                    <InstitutionalBadge email={a.email} />
+                  </div>
+                  {a.affiliation && <p className="text-xs text-secondary mt-0.5">{a.affiliation}</p>}
                 </li>
               ))}
             </ul>

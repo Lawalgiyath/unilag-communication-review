@@ -3,6 +3,7 @@
 import { useState, useActionState } from "react";
 import { updateProfileAction, updatePasswordAction, requestPasswordResetEmailAction } from "./actions";
 import type { ProfileState, PasswordState } from "./actions";
+import { InstitutionalBadge } from "@/components/common/InstitutionalBadge";
 
 // This page is a server component wrapper that passes user data
 export { ProfilePageClient as default };
@@ -31,7 +32,10 @@ function ProfilePageClient({ user }: { user: { name: string; title: string | nul
       <div className="page-header">
         <div>
           <h1 className="page-title">My Profile</h1>
-          <p className="page-subtitle">{user.email}</p>
+          <div className="page-subtitle flex items-center gap-2 mt-1">
+            <span>{user.email}</span>
+            <InstitutionalBadge email={user.email} />
+          </div>
         </div>
       </div>
 
