@@ -1,4 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import fs from "node:fs";
+import path from "node:path";
 
 /**
  * Generates searchable-text article PDFs for seeding, formatted per Google
@@ -279,6 +281,58 @@ export async function makeSeedPdf(input: SeedPdfInput): Promise<Uint8Array> {
         color: rgb(0.2, 0.2, 0.2),
       });
       y -= 14;
+    } else if (para.startsWith("![")) {
+      const match = para.match(/^!\[(.*?)\]\((.*?)\)$/);
+      if (match) {
+        const caption = cleanWinAnsi(match[1]);
+        const imgSrc = match[2];
+        const localPath = path.resolve(
+          process.cwd(),
+          "public",
+          imgSrc.replace(/^\//, "")
+        );
+        if (fs.existsSync(localPath)) {
+          try {
+            const bytes = fs.readFileSync(localPath);
+            const embedded = await doc.embedPng(bytes);
+            const dims = embedded.scale(1);
+            let w = Math.min(contentWidth, dims.width);
+            let h = (dims.height / dims.width) * w;
+            const maxH = 220;
+            if (h > maxH) {
+              h = maxH;
+              w = (dims.width / dims.height) * h;
+            }
+            ensureSpace(h + 30);
+            const imgX = MARGIN + (contentWidth - w) / 2;
+            page.drawImage(embedded, {
+              x: imgX,
+              y: y - h,
+              width: w,
+              height: h,
+            });
+            y -= h + 6;
+            if (caption) {
+              const capLines = wrapText(caption, timesItalic, 8.5, contentWidth);
+              for (const cl of capLines) {
+                ensureSpace(12);
+                const cw = timesItalic.widthOfTextAtSize(cl, 8.5);
+                page.drawText(cl, {
+                  x: MARGIN + (contentWidth - cw) / 2,
+                  y,
+                  size: 8.5,
+                  font: timesItalic,
+                  color: rgb(0.35, 0.35, 0.35),
+                });
+                y -= 11;
+              }
+            }
+            y -= 8;
+          } catch (err) {
+            console.error("Failed to embed image in PDF:", localPath, err);
+          }
+        }
+      }
     } else {
       drawParagraph(para, times, BODY_SIZE, BODY_LEADING);
       y -= 7;

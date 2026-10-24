@@ -58,6 +58,7 @@ export async function GET(
         doi: demoArticle.doi,
         abstract: demoArticle.abstract,
         keywords: demoArticle.keywords.map((k) => k.label),
+        bodyParagraphs: demoArticle.bodyParagraphs,
         references: demoArticle.references.map((r) => r.text),
       });
 

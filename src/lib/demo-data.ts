@@ -310,7 +310,7 @@ export const DEMO_BOARD: DemoBoardMember[] = [
   },
   {
     id: "b3",
-    name: "Unwana Samuel Akpan, Ph.D.",
+    name: "Dr. Unwana Samuel Akpan",
     role: "Editor",
     affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
     orcid: null,

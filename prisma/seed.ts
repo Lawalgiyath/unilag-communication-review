@@ -235,7 +235,7 @@ const BOARD = [
     order: 2,
   },
   {
-    name: "Unwana Samuel Akpan, Ph.D.",
+    name: "Dr. Unwana Samuel Akpan",
     role: "Editor",
     affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
     order: 3,

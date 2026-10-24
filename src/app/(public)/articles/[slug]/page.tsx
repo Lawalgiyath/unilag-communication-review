@@ -18,6 +18,7 @@ import { AuthorList } from "@/components/article/AuthorList";
 import { CiteModal } from "@/components/article/CiteModal";
 import { ShareLinks } from "@/components/article/ShareLinks";
 import { ArticleListItem } from "@/components/article/ArticleListItem";
+import { ArticleBody } from "@/components/article/ArticleBody";
 import {
   getArticleBySlug,
   getRelatedArticles,
@@ -272,9 +273,21 @@ export default async function ArticlePage({
         </p>
       </section>
 
+      {/* Full-Text Article Body with Tables and Figures */}
+      {article.bodyParagraphs && article.bodyParagraphs.length > 0 && (
+        <section aria-labelledby="fulltext-heading" className="mt-12">
+          <h2 id="fulltext-heading" className="section-label border-b border-hairline pb-2">
+            Full Article
+          </h2>
+          <div className="mt-6">
+            <ArticleBody paragraphs={article.bodyParagraphs} />
+          </div>
+        </section>
+      )}
+
       {/* References */}
       {article.references.length > 0 && (
-        <section aria-labelledby="references-heading" className="mt-10">
+        <section aria-labelledby="references-heading" className="mt-12">
           <h2 id="references-heading" className="section-label border-b border-hairline pb-2">
             References
           </h2>
