@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import { DEMO_BOARD } from "@/lib/demo-data";
+import { db } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "Editorial Board",
@@ -13,12 +17,35 @@ const ROLE_ORDER = [
   "Member",
 ];
 
-export default function EditorialBoardPage() {
+export default async function EditorialBoardPage() {
+  let boardMembers: Array<{
+    id: string;
+    name: string;
+    role: string;
+    affiliation: string;
+    orcid: string | null;
+    order: number;
+  }> = [];
+
+  try {
+    const fromDb = await db.boardMember.findMany({
+      orderBy: { order: "asc" },
+    });
+    if (fromDb && fromDb.length > 0) {
+      boardMembers = fromDb;
+    } else {
+      boardMembers = DEMO_BOARD;
+    }
+  } catch (e) {
+    console.error("Failed to fetch board members from db, using fallback", e);
+    boardMembers = DEMO_BOARD;
+  }
+
   const grouped = ROLE_ORDER.map((role) => ({
     role,
-    members: DEMO_BOARD.filter((m) => m.role === role).sort(
-      (a, b) => a.order - b.order
-    ),
+    members: boardMembers
+      .filter((m) => m.role === role)
+      .sort((a, b) => a.order - b.order),
   })).filter((g) => g.members.length > 0);
 
   return (

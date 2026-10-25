@@ -223,7 +223,7 @@ For problems with the online submission system, password resets, or file upload 
 
 const BOARD = [
   {
-    name: "Dr. Bisi Crown Olawuyi",
+    name: "Dr. Ebenezer Adebisi Olawuyi",
     role: "Special Issue Guest Editor",
     affiliation: "Department of Communication and Language Arts, University of Ibadan, Nigeria",
     order: 1,
@@ -237,7 +237,7 @@ const BOARD = [
   {
     name: "Dr. Unwana Samuel Akpan",
     role: "Editor",
-    affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
+    affiliation: "Department of Journalism, Broadcasting and Media Studies, University of Lagos, Nigeria.",
     order: 3,
   },
   {
@@ -268,7 +268,7 @@ const ANNOUNCEMENTS = [
     publishedAt: new Date("2026-10-22"),
     body: `The Faculty of Communication and Media Studies, University of Lagos, is proud to announce the publication of **Volume 9, Number 2 (2026)** — our Special Issue titled **Platforms, Power, and Polls: Perspectives Ahead of Nigeria’s 2027 General Elections**.
 
-Guest Edited by **Dr. Bisi Crown Olawuyi** (University of Ibadan), with Editor **Dr. Unwana Samuel Akpan** and Editor-in-Chief **Prof. Sunday Oloruntola**, this special issue features 10 peer-reviewed research articles addressing youth digital activism, electoral credibility, real-time result transmission, broadcast journalism, musical satire, and artificial intelligence in Nigerian politics.
+Guest Edited by **Dr. Ebenezer Adebisi Olawuyi** (Department of Communication and Language Arts, University of Ibadan), with Editor **Dr. Unwana Samuel Akpan** (Department of Journalism, Broadcasting and Media Studies, University of Lagos) and Editor-in-Chief **Prof. Sunday Oloruntola**, this special issue features 10 peer-reviewed research articles addressing youth digital activism, electoral credibility, real-time result transmission, broadcast journalism, musical satire, and artificial intelligence in Nigerian politics.
 
 All articles are published open access with official Zenodo DOIs and available for immediate reading and PDF download. Browse the [Current Issue](/current) to access the table of contents.`,
   },
@@ -385,11 +385,11 @@ async function main() {
     "uakpan@unilag.edu.ng",
     "Dr. Unwana Samuel Akpan",
     ["EDITOR", "REVIEWER"],
-    { title: "Dr." }
+    { title: "Dr.", affiliation: "Department of Journalism, Broadcasting and Media Studies, University of Lagos, Nigeria." }
   );
   const guestEditor = await mkUser(
     "bisi.olawuyi@ui.edu.ng",
-    "Dr. Bisi Crown Olawuyi",
+    "Dr. Ebenezer Adebisi Olawuyi",
     ["EDITOR", "REVIEWER"],
     { title: "Dr.", affiliation: "Department of Communication and Language Arts, University of Ibadan, Nigeria" }
   );
@@ -447,7 +447,7 @@ async function main() {
       title: SPECIAL_ISSUE_TITLE,
       publishedAt: new Date("2026-10-22"),
       isCurrent: true,
-      coverBlurb: "Platforms, Power, and Polls: Perspectives Ahead of Nigeria’s 2027 General Elections. Guest Editor: Dr. Bisi Crown Olawuyi.",
+      coverBlurb: "Platforms, Power, and Polls: Perspectives Ahead of Nigeria’s 2027 General Elections. Guest Editor: Dr. Ebenezer Adebisi Olawuyi.",
     },
   });
 

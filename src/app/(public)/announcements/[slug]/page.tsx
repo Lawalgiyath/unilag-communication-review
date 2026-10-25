@@ -6,8 +6,25 @@ import { JOURNAL } from "@/lib/constants";
 import { Badge } from "@/components/ui/Badge";
 import { getAnnouncementBySlug, DEMO_ANNOUNCEMENTS } from "@/lib/demo-data";
 
+import { db } from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export function generateStaticParams() {
   return DEMO_ANNOUNCEMENTS.map((a) => ({ slug: a.slug }));
+}
+
+async function findAnnouncement(slug: string) {
+  try {
+    const fromDb = await db.announcement.findUnique({
+      where: { slug },
+    });
+    if (fromDb) return fromDb;
+  } catch (e) {
+    // ignore
+  }
+  return getAnnouncementBySlug(slug);
 }
 
 export async function generateMetadata({
@@ -16,7 +33,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const ann = getAnnouncementBySlug(slug);
+  const ann = await findAnnouncement(slug);
   if (!ann) return { title: "Not Found" };
   return {
     title: ann.title,
@@ -30,7 +47,7 @@ export default async function AnnouncementPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const ann = getAnnouncementBySlug(slug);
+  const ann = await findAnnouncement(slug);
   if (!ann) notFound();
 
   const html = await marked.parse(ann.body);
@@ -48,7 +65,7 @@ export default async function AnnouncementPage({
           {ann.title}
         </h1>
         <p className="mt-3 text-sm text-secondary">
-          {JOURNAL.shortTitle} · {format(ann.publishedAt, "d MMMM yyyy")}
+          {JOURNAL.shortTitle}{ann.publishedAt ? ` · ${format(ann.publishedAt, "d MMMM yyyy")}` : ""}
         </p>
       </header>
 

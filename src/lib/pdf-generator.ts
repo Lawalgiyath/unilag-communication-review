@@ -1,9 +1,15 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { JOURNAL } from "./constants";
 
+export interface ArticlePdfAuthor {
+  name: string;
+  affiliation?: string | null;
+  orcid?: string | null;
+}
+
 export interface ArticlePdfData {
   title: string;
-  authors: { name: string; affiliation?: string | null }[] | string[];
+  authors: ArticlePdfAuthor[] | string[];
   volume: number;
   issue: number;
   year: number;
@@ -62,9 +68,9 @@ export async function generateArticlePdf(data: ArticlePdfData): Promise<Uint8Arr
   const timesItalic = await doc.embedFont(StandardFonts.TimesRomanItalic);
   const helvetica = await doc.embedFont(StandardFonts.Helvetica);
 
-  const authorNames = Array.isArray(data.authors)
-    ? data.authors.map((a) => (typeof a === "string" ? a : a.name)).join(", ")
-    : "";
+  const parsedAuthors: ArticlePdfAuthor[] = Array.isArray(data.authors)
+    ? data.authors.map((a) => (typeof a === "string" ? { name: a } : a))
+    : [];
 
   const kwList = Array.isArray(data.keywords)
     ? data.keywords.map((k) => (typeof k === "string" ? k : k.label))
@@ -134,6 +140,61 @@ export async function generateArticlePdf(data: ArticlePdfData): Promise<Uint8Arr
     }
   }
 
+  const drawParagraph = (
+    text: string,
+    font: PDFFont,
+    size: number,
+    leading: number,
+    opts: { indent?: number; color?: ReturnType<typeof rgb>; justify?: boolean } = {}
+  ) => {
+    const maxWidth = maxW - (opts.indent ?? 0);
+    const lines = wrapText(text, font, size, maxWidth);
+    for (let idx = 0; idx < lines.length; idx++) {
+      const line = lines[idx];
+      const isLastLine = idx === lines.length - 1;
+      ensureSpace(leading);
+
+      if (opts.justify && !isLastLine) {
+        const words = line.split(/\s+/).filter(Boolean);
+        if (words.length > 1) {
+          const totalWordsWidth = words.reduce(
+            (sum, w) => sum + font.widthOfTextAtSize(w, size),
+            0
+          );
+          const totalSpace = maxWidth - totalWordsWidth;
+          const spacePerGap = totalSpace / (words.length - 1);
+          const spaceW = font.widthOfTextAtSize(" ", size);
+
+          if (spacePerGap > 0 && spacePerGap < spaceW * 4) {
+            let curX = MARGIN + (opts.indent ?? 0);
+            for (let wIdx = 0; wIdx < words.length; wIdx++) {
+              const word = words[wIdx];
+              curPage.drawText(word, {
+                x: curX,
+                y,
+                size,
+                font,
+                color: opts.color ?? rgb(0.12, 0.12, 0.12),
+              });
+              curX += font.widthOfTextAtSize(word, size) + spacePerGap;
+            }
+            y -= leading;
+            continue;
+          }
+        }
+      }
+
+      curPage.drawText(line, {
+        x: MARGIN + (opts.indent ?? 0),
+        y,
+        size,
+        font,
+        color: opts.color ?? rgb(0.12, 0.12, 0.12),
+      });
+      y -= leading;
+    }
+  };
+
   // Page 1 Title
   const titleLines = wrapText(data.title, timesBold, 20, maxW);
   for (const line of titleLines) {
@@ -149,27 +210,47 @@ export async function generateArticlePdf(data: ArticlePdfData): Promise<Uint8Arr
   }
   y -= 8;
 
-  // Authors
-  ensureSpace(16);
-  curPage.drawText(cleanWinAnsi(authorNames), {
-    x: MARGIN,
-    y,
-    size: 13,
-    font: timesItalic,
-    color: rgb(0.2, 0.2, 0.2),
-  });
-  y -= 16;
+  // Authors with Affiliation & ORCID
+  for (let aIdx = 0; aIdx < parsedAuthors.length; aIdx++) {
+    const auth = parsedAuthors[aIdx];
+    const nameStr = cleanWinAnsi(auth.name);
+    ensureSpace(16);
+    curPage.drawText(nameStr, {
+      x: MARGIN,
+      y,
+      size: 13,
+      font: timesBold,
+      color: rgb(0.1, 0.1, 0.1),
+    });
+    y -= 16;
 
-  // Affiliation notice
-  ensureSpace(12);
-  curPage.drawText("Faculty of Communication and Media Studies, University of Lagos", {
-    x: MARGIN,
-    y,
-    size: 9.5,
-    font: timesRoman,
-    color: rgb(0.4, 0.4, 0.4),
-  });
-  y -= 18;
+    const details: string[] = [];
+    if (auth.affiliation) {
+      details.push(cleanWinAnsi(auth.affiliation));
+    }
+    if (auth.orcid) {
+      const cleanO = auth.orcid.replace(/^https?:\/\/orcid\.org\//, "").trim();
+      details.push(`ORCID: https://orcid.org/${cleanO}`);
+    }
+
+    if (details.length > 0) {
+      const detailStr = details.join(" | ");
+      const detailLines = wrapText(detailStr, timesItalic, 9, maxW);
+      for (const dl of detailLines) {
+        ensureSpace(12);
+        curPage.drawText(dl, {
+          x: MARGIN,
+          y,
+          size: 9,
+          font: timesItalic,
+          color: rgb(0.3, 0.3, 0.3),
+        });
+        y -= 12;
+      }
+    }
+    y -= 4;
+  }
+  y -= 10;
 
   // Divider
   curPage.drawLine({
@@ -191,18 +272,7 @@ export async function generateArticlePdf(data: ArticlePdfData): Promise<Uint8Arr
   });
   y -= 14;
 
-  const abstractLines = wrapText(data.abstract, timesRoman, 9.5, maxW);
-  for (const line of abstractLines) {
-    ensureSpace(13);
-    curPage.drawText(line, {
-      x: MARGIN,
-      y,
-      size: 9.5,
-      font: timesRoman,
-      color: rgb(0.15, 0.15, 0.15),
-    });
-    y -= 13;
-  }
+  drawParagraph(data.abstract, timesRoman, 9.5, 13, { justify: true });
   y -= 8;
 
   // Keywords
@@ -245,32 +315,50 @@ export async function generateArticlePdf(data: ArticlePdfData): Promise<Uint8Arr
       ];
 
   for (const para of paras) {
-    const isHeading = /^\d+\.\s+[A-Z]/.test(para.trim());
-    if (isHeading) {
-      y -= 10;
-      ensureSpace(20);
-      curPage.drawText(cleanWinAnsi(para), {
+    if (para.startsWith("## ")) {
+      y -= 8;
+      ensureSpace(24);
+      curPage.drawText(cleanWinAnsi(para.slice(3)), {
         x: MARGIN,
         y,
-        size: 12,
+        size: 12.5,
         font: timesBold,
         color: rgb(0.1, 0.1, 0.1),
       });
-      y -= 16;
+      y -= 17;
+    } else if (para.startsWith("### ")) {
+      y -= 6;
+      ensureSpace(20);
+      curPage.drawText(cleanWinAnsi(para.slice(4)), {
+        x: MARGIN,
+        y,
+        size: 11,
+        font: timesBold,
+        color: rgb(0.1, 0.1, 0.1),
+      });
+      y -= 15;
     } else {
-      const pLines = wrapText(para, timesRoman, BODY_SIZE, maxW);
-      for (const line of pLines) {
-        ensureSpace(BODY_LEADING);
-        curPage.drawText(line, {
+      const subtitleMatch = para.match(/^((?:Theme\s+[A-Za-z0-9]+|Research\s+Questions?|Statement\s+of\s+the\s+Problem|Conceptual\s+Framework|Key\s+Finding\s*[0-9]*):)\s*(.*)$/s);
+      if (subtitleMatch) {
+        const subTitle = subtitleMatch[1];
+        const rest = subtitleMatch[2];
+        ensureSpace(20);
+        curPage.drawText(cleanWinAnsi(subTitle), {
           x: MARGIN,
           y,
           size: BODY_SIZE,
-          font: timesRoman,
-          color: rgb(0.12, 0.12, 0.12),
+          font: timesBold,
+          color: rgb(0.1, 0.1, 0.1),
         });
         y -= BODY_LEADING;
+        if (rest) {
+          drawParagraph(rest, timesRoman, BODY_SIZE, BODY_LEADING, { justify: true });
+          y -= 6;
+        }
+      } else {
+        drawParagraph(para, timesRoman, BODY_SIZE, BODY_LEADING, { justify: true });
+        y -= 6;
       }
-      y -= 6;
     }
   }
 

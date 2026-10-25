@@ -34,3 +34,6 @@ next-env.d.ts
 scratch/
 *.ogg
 *.wav
+
+*.zip
+extracted_voice_notes/

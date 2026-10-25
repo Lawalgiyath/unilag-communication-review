@@ -46,7 +46,12 @@ async function main() {
 
     const pdfBytes = await makeSeedPdf({
       title: art.title,
-      authors: art.authors.map((a) => formatAuthorName(a)),
+      authors: art.authors.map((a) => ({
+        name: formatAuthorName(a),
+        affiliation: a.affiliation,
+        orcid: a.orcid,
+        email: a.email,
+      })),
       journalTitle: JOURNAL_TITLE,
       issn: ISSN,
       volume: SPECIAL_ISSUE_VOLUME,

@@ -49,6 +49,7 @@ export async function GET(
         authors: demoArticle.authors.map((a) => ({
           name: a.name || `${a.firstName} ${a.lastName}`.trim(),
           affiliation: a.affiliation,
+          orcid: a.orcid,
         })),
         volume: demoArticle.volumeNumber,
         issue: demoArticle.issueNumber,

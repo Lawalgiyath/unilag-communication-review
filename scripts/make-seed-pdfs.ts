@@ -12,9 +12,16 @@ import path from "node:path";
  * Output is real embedded text (StandardFonts), ~30-80 KB per file.
  */
 
+export interface SeedPdfAuthor {
+  name: string;
+  affiliation?: string | null;
+  orcid?: string | null;
+  email?: string | null;
+}
+
 export interface SeedPdfInput {
   title: string;
-  authors: string[]; // "First Last" display names
+  authors: (string | SeedPdfAuthor)[]; // strings or SeedPdfAuthor objects
   journalTitle: string;
   issn: string;
   volume: number;
@@ -134,11 +141,45 @@ export async function makeSeedPdf(input: SeedPdfInput): Promise<Uint8Array> {
     font: PDFFont,
     size: number,
     leading: number,
-    opts: { indent?: number; color?: ReturnType<typeof rgb> } = {}
+    opts: { indent?: number; color?: ReturnType<typeof rgb>; justify?: boolean } = {}
   ) => {
-    const lines = wrapText(text, font, size, contentWidth - (opts.indent ?? 0));
-    for (const line of lines) {
+    const maxWidth = contentWidth - (opts.indent ?? 0);
+    const lines = wrapText(text, font, size, maxWidth);
+    for (let idx = 0; idx < lines.length; idx++) {
+      const line = lines[idx];
+      const isLastLine = idx === lines.length - 1;
       ensureSpace(leading);
+
+      if (opts.justify && !isLastLine) {
+        const words = line.split(/\s+/).filter(Boolean);
+        if (words.length > 1) {
+          const totalWordsWidth = words.reduce(
+            (sum, w) => sum + font.widthOfTextAtSize(w, size),
+            0
+          );
+          const totalSpace = maxWidth - totalWordsWidth;
+          const spacePerGap = totalSpace / (words.length - 1);
+          const spaceW = font.widthOfTextAtSize(" ", size);
+
+          if (spacePerGap > 0 && spacePerGap < spaceW * 4) {
+            let curX = MARGIN + (opts.indent ?? 0);
+            for (let wIdx = 0; wIdx < words.length; wIdx++) {
+              const word = words[wIdx];
+              page.drawText(word, {
+                x: curX,
+                y,
+                size,
+                font,
+                color: opts.color ?? rgb(0, 0, 0),
+              });
+              curX += font.widthOfTextAtSize(word, size) + spacePerGap;
+            }
+            y -= leading;
+            continue;
+          }
+        }
+      }
+
       page.drawText(line, {
         x: MARGIN + (opts.indent ?? 0),
         y,
@@ -155,26 +196,55 @@ export async function makeSeedPdf(input: SeedPdfInput): Promise<Uint8Array> {
   y = PAGE_H - MARGIN - 20;
 
   // Title: largest text, >= 24pt
-  const titleLines = wrapText(input.title, timesBold, 24, contentWidth);
+  const titleLines = wrapText(input.title, timesBold, 22, contentWidth);
   for (const line of titleLines) {
-    page.drawText(line, { x: MARGIN, y, size: 24, font: timesBold });
-    y -= 30;
+    page.drawText(line, { x: MARGIN, y, size: 22, font: timesBold });
+    y -= 28;
   }
-  y -= 6;
+  y -= 8;
 
-  // Authors: 16pt, comma separated, no affiliations on this line
-  const authorLine = input.authors.join(", ");
-  const authorLines = wrapText(authorLine, times, 16, contentWidth);
-  for (const line of authorLines) {
-    page.drawText(line, { x: MARGIN, y, size: 16, font: times });
-    y -= 21;
+  // Authors with Affiliation & ORCID
+  const parsedAuthors: SeedPdfAuthor[] = input.authors.map((a) =>
+    typeof a === "string" ? { name: a } : a
+  );
+
+  for (let aIdx = 0; aIdx < parsedAuthors.length; aIdx++) {
+    const auth = parsedAuthors[aIdx];
+    const nameStr = cleanWinAnsi(auth.name);
+    page.drawText(nameStr, { x: MARGIN, y, size: 13, font: timesBold });
+    y -= 16;
+
+    const details: string[] = [];
+    if (auth.affiliation) {
+      details.push(cleanWinAnsi(auth.affiliation));
+    }
+    if (auth.orcid) {
+      const cleanO = auth.orcid.replace(/^https?:\/\/orcid\.org\//, "").trim();
+      details.push(`ORCID: https://orcid.org/${cleanO}`);
+    }
+
+    if (details.length > 0) {
+      const detailStr = details.join(" | ");
+      const detailLines = wrapText(detailStr, timesItalic, 9, contentWidth);
+      for (const dl of detailLines) {
+        page.drawText(dl, {
+          x: MARGIN,
+          y,
+          size: 9,
+          font: timesItalic,
+          color: rgb(0.25, 0.25, 0.25),
+        });
+        y -= 12;
+      }
+    }
+    y -= 3;
   }
-  y -= 14;
+  y -= 10;
 
   // Abstract
   page.drawText("Abstract", { x: MARGIN, y, size: 12, font: timesBold });
-  y -= 17;
-  drawParagraph(input.abstract, times, 10, 13.5);
+  y -= 16;
+  drawParagraph(input.abstract, times, 10, 13.5, { justify: true });
   y -= 8;
 
   drawParagraph(
@@ -254,8 +324,8 @@ export async function makeSeedPdf(input: SeedPdfInput): Promise<Uint8Array> {
   for (let i = 0; i < input.bodyParagraphs.length; i++) {
     const para = input.bodyParagraphs[i];
     if (para.startsWith("## ")) {
-      ensureSpace(30);
-      y -= 6;
+      ensureSpace(32);
+      y -= 8;
       page.drawText(cleanWinAnsi(para.slice(3)), {
         x: MARGIN,
         y,
@@ -263,6 +333,26 @@ export async function makeSeedPdf(input: SeedPdfInput): Promise<Uint8Array> {
         font: timesBold,
       });
       y -= 19;
+    } else if (para.startsWith("### ")) {
+      ensureSpace(28);
+      y -= 6;
+      page.drawText(cleanWinAnsi(para.slice(4)), {
+        x: MARGIN,
+        y,
+        size: 11.5,
+        font: timesBold,
+      });
+      y -= 16;
+    } else if (para.startsWith("#### ")) {
+      ensureSpace(24);
+      y -= 4;
+      page.drawText(cleanWinAnsi(para.slice(5)), {
+        x: MARGIN,
+        y,
+        size: 11,
+        font: timesBold,
+      });
+      y -= 15;
     } else if (para.startsWith("|")) {
       const tableLines = [para];
       while (i + 1 < input.bodyParagraphs.length && input.bodyParagraphs[i + 1].startsWith("|")) {
@@ -334,8 +424,27 @@ export async function makeSeedPdf(input: SeedPdfInput): Promise<Uint8Array> {
         }
       }
     } else {
-      drawParagraph(para, times, BODY_SIZE, BODY_LEADING);
-      y -= 7;
+      // Check for bold subtitle prefix in paragraph (e.g. "Theme One:", "Statement of the Problem:", "Research Question 1:")
+      const subtitleMatch = para.match(/^((?:Theme\s+[A-Za-z0-9]+|Research\s+Questions?|Statement\s+of\s+the\s+Problem|Conceptual\s+Framework|Key\s+Finding\s*[0-9]*):)\s*(.*)$/s);
+      if (subtitleMatch) {
+        const subTitle = subtitleMatch[1];
+        const rest = subtitleMatch[2];
+        ensureSpace(22);
+        page.drawText(cleanWinAnsi(subTitle), {
+          x: MARGIN,
+          y,
+          size: BODY_SIZE,
+          font: timesBold,
+        });
+        y -= BODY_LEADING;
+        if (rest) {
+          drawParagraph(rest, times, BODY_SIZE, BODY_LEADING, { justify: true });
+          y -= 7;
+        }
+      } else {
+        drawParagraph(para, times, BODY_SIZE, BODY_LEADING, { justify: true });
+        y -= 7;
+      }
     }
   }
 
@@ -345,14 +454,14 @@ export async function makeSeedPdf(input: SeedPdfInput): Promise<Uint8Array> {
   page.drawText("References", { x: MARGIN, y, size: 13, font: timesBold });
   y -= 19;
   input.references.forEach((ref, i) => {
-    drawParagraph(`${i + 1}. ${ref}`, times, 10, 13, { indent: 0 });
+    drawParagraph(`${i + 1}. ${ref}`, times, 10, 13, { indent: 0, justify: true });
     y -= 4;
   });
 
   footer();
 
   doc.setTitle(input.title);
-  doc.setAuthor(input.authors.join("; "));
+  doc.setAuthor(parsedAuthors.map((a) => a.name).join("; "));
   doc.setSubject(
     `${input.journalTitle}, ${input.volume}(${input.issue}), ${input.firstPage}-${input.lastPage}`
   );

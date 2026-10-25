@@ -131,13 +131,15 @@ export function ArticleBody({ paragraphs }: ArticleBodyProps) {
         continue;
       }
 
-      // Check for Section Heading ## ...
-      if (p.startsWith("## ")) {
-        const text = p.slice(3).trim();
+      // Check for Section Heading # / ## / ### / ####
+      const headingMatch = p.match(/^(#{1,4})\s+(.+)$/);
+      if (headingMatch) {
+        const level = headingMatch[1].length;
+        const text = headingMatch[2].trim();
         const id = slugify(text);
         result.push({
           type: "heading",
-          level: 2,
+          level,
           id,
           text,
         });
@@ -156,6 +158,51 @@ export function ArticleBody({ paragraphs }: ArticleBodyProps) {
 
     return { blocks: result, headings: navHeadings };
   }, [paragraphs]);
+
+  function renderFormattedText(text: string) {
+    // Check if paragraph starts with a subtitle like "Theme One:", "Research Question 1:", etc.
+    const subtitlePrefixMatch = text.match(/^((?:Theme\s+[A-Za-z0-9]+|Research\s+Questions?|Statement\s+of\s+the\s+Problem|Conceptual\s+Framework|Key\s+Finding\s*[0-9]*|[A-Z][A-Za-z0-9\s]{2,40}):)\s+(.*)$/s);
+
+    if (subtitlePrefixMatch) {
+      const prefix = subtitlePrefixMatch[1];
+      const rest = subtitlePrefixMatch[2];
+      return (
+        <>
+          <strong className="font-bold text-ink block sm:inline mb-1 sm:mb-0 sm:mr-1.5">{prefix}</strong>
+          {renderInlineMarkdown(rest)}
+        </>
+      );
+    }
+
+    return renderInlineMarkdown(text);
+  }
+
+  function renderInlineMarkdown(text: string) {
+    // Basic regex-based inline parser for **bold** and *italic*
+    const parts: React.ReactNode[] = [];
+    const regex = /(\*\*.*?\*\*|\*.*?\*)/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+      const token = match[0];
+      if (token.startsWith("**") && token.endsWith("**")) {
+        parts.push(<strong key={match.index} className="font-bold text-ink">{token.slice(2, -2)}</strong>);
+      } else if (token.startsWith("*") && token.endsWith("*")) {
+        parts.push(<em key={match.index} className="italic">{token.slice(1, -1)}</em>);
+      }
+      lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
+  }
 
   return (
     <article className="article-body">
@@ -198,11 +245,23 @@ export function ArticleBody({ paragraphs }: ArticleBodyProps) {
         {blocks.map((block, idx) => {
           switch (block.type) {
             case "heading":
+              if (block.level >= 3) {
+                return (
+                  <div key={idx} className="pt-4 first:pt-0">
+                    <h4
+                      id={block.id}
+                      className="scroll-mt-24 font-display text-lg sm:text-xl font-bold text-ink"
+                    >
+                      {block.text}
+                    </h4>
+                  </div>
+                );
+              }
               return (
                 <div key={idx} className="pt-6 first:pt-0">
                   <h3
                     id={block.id}
-                    className="scroll-mt-24 border-b border-hairline pb-2 font-display text-xl sm:text-2xl font-semibold text-ink"
+                    className="scroll-mt-24 border-b border-hairline pb-2 font-display text-xl sm:text-2xl font-bold text-ink"
                   >
                     {block.text}
                   </h3>
@@ -214,7 +273,7 @@ export function ArticleBody({ paragraphs }: ArticleBodyProps) {
                 <div key={idx} className="my-8 overflow-hidden rounded-sm border border-hairline bg-paper shadow-xs">
                   {block.caption && (
                     <div className="border-b border-hairline bg-paper-dark/50 px-4 py-3">
-                      <p className="font-sans text-xs sm:text-sm font-semibold text-ink">
+                      <p className="font-sans text-xs sm:text-sm font-bold text-ink">
                         {block.caption}
                       </p>
                     </div>
@@ -227,7 +286,7 @@ export function ArticleBody({ paragraphs }: ArticleBodyProps) {
                             {block.headers.map((h, hIdx) => (
                               <th
                                 key={hIdx}
-                                className="whitespace-nowrap px-3.5 py-2.5 text-xs font-semibold uppercase tracking-wider text-secondary border-r border-hairline last:border-r-0"
+                                className="whitespace-nowrap px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider text-ink border-r border-hairline last:border-r-0"
                               >
                                 {h}
                               </th>
@@ -275,7 +334,7 @@ export function ArticleBody({ paragraphs }: ArticleBodyProps) {
                     />
                   </div>
                   {block.caption && (
-                    <figcaption className="mt-3 font-sans text-xs sm:text-sm text-secondary italic">
+                    <figcaption className="mt-3 font-sans text-xs sm:text-sm text-ink font-semibold italic">
                       {block.caption}
                     </figcaption>
                   )}
@@ -287,9 +346,9 @@ export function ArticleBody({ paragraphs }: ArticleBodyProps) {
               return (
                 <p
                   key={idx}
-                  className="font-serif text-[16px] leading-[1.8] text-ink text-justify sm:text-left hyphens-auto"
+                  className="font-serif text-[16px] leading-[1.8] text-ink text-justify hyphens-auto"
                 >
-                  {block.text}
+                  {renderFormattedText(block.text)}
                 </p>
               );
           }
