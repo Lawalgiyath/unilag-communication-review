@@ -53,25 +53,41 @@ body {
   max-width: 65ch;
   color: var(--color-ink);
 }
-.prose-journal p {
+.prose-journal p,
+.article-body p {
   margin-bottom: 1.1em;
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
 }
 .prose-journal h2 {
   font-family: var(--font-display);
   font-variation-settings: "SOFT" 0, "WONK" 0;
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 700;
   margin-top: 1.8em;
   margin-bottom: 0.6em;
   color: var(--color-ink);
 }
-.prose-journal h3 {
+.prose-journal h3,
+.article-body h3 {
   font-family: var(--font-display);
   font-variation-settings: "SOFT" 0, "WONK" 0;
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 700;
   margin-top: 1.5em;
   margin-bottom: 0.5em;
+  color: var(--color-ink);
+}
+.prose-journal h4,
+.article-body h4 {
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 0, "WONK" 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 1.3em;
+  margin-bottom: 0.4em;
+  color: var(--color-ink);
 }
 .prose-journal ul,
 .prose-journal ol {
