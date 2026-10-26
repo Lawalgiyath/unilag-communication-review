@@ -9,6 +9,7 @@ import {
   getCurrentIssue,
   getIssue,
   getLatestArticles,
+  searchArticles,
 } from "@/lib/demo-data";
 
 function mapDbArticleToDemo(a: any): DemoArticle {
@@ -297,4 +298,55 @@ export async function getLiveArchives(): Promise<DemoVolume[]> {
   }
 
   return DEMO_VOLUMES;
+}
+
+export async function searchLiveArticles(query: string): Promise<DemoArticle[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  const results: DemoArticle[] = [];
+  const seenSlugs = new Set<string>();
+
+  try {
+    const dbArticles = await db.article.findMany({
+      where: {
+        status: "PUBLISHED",
+        OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { abstract: { contains: q, mode: "insensitive" } },
+          { authors: { some: { name: { contains: q, mode: "insensitive" } } } },
+          { keywords: { some: { keyword: { label: { contains: q, mode: "insensitive" } } } } },
+          { submission: { keywordsCsv: { contains: q, mode: "insensitive" } } },
+        ],
+      },
+      include: {
+        authors: { orderBy: { order: "asc" } },
+        issue: { include: { volume: true } },
+        keywords: { include: { keyword: true } },
+        submission: { select: { keywordsCsv: true } },
+      },
+      orderBy: { publishedOnline: "desc" },
+    });
+
+    for (const a of dbArticles) {
+      results.push(mapDbArticleToDemo(a));
+      seenSlugs.add(a.slug);
+    }
+  } catch (err) {
+    console.error("Failed to query live search from database:", err);
+  }
+
+  try {
+    const demoMatches = searchArticles(q);
+    for (const d of demoMatches) {
+      if (!seenSlugs.has(d.slug)) {
+        results.push(d);
+        seenSlugs.add(d.slug);
+      }
+    }
+  } catch (err) {
+    console.error("Failed to query demo search:", err);
+  }
+
+  return results;
 }

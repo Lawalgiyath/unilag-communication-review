@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ArticleListItem } from "@/components/article/ArticleListItem";
-import { searchArticles } from "@/lib/demo-data";
+import { searchLiveArticles } from "@/lib/public-data";
 
 export const metadata: Metadata = {
   title: "Search",
@@ -16,7 +16,7 @@ export default async function SearchPage({
 }) {
   const { q } = await searchParams;
   const query = q?.trim() ?? "";
-  const results = query ? searchArticles(query) : [];
+  const results = query ? await searchLiveArticles(query) : [];
 
   return (
     <div>

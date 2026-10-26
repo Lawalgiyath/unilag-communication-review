@@ -244,8 +244,8 @@ export default async function ArticlePage({
             </span>
             {article.keywords.map((k) => (
               <Link
-                key={k.slug}
-                href={`/keywords/${k.slug}`}
+                key={k.slug || k.label}
+                href={`/search?q=${encodeURIComponent(k.label || k.slug)}`}
                 className="border border-hairline px-2.5 py-1 text-xs text-secondary hover:border-maroon hover:text-maroon"
               >
                 {k.label}
