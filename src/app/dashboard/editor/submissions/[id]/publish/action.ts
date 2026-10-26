@@ -71,6 +71,17 @@ export async function publishAction(_prev: PublishState, formData: FormData): Pr
     }
   }
 
+  // Fallback: If no separate typeset PDF was provided at publish, use the submitted manuscript PDF
+  if (!pdfFileId) {
+    const latestVersion = await db.submissionVersion.findFirst({
+      where: { submissionId },
+      orderBy: { versionNumber: "desc" },
+    });
+    if (latestVersion?.anonymizedFileId) {
+      pdfFileId = latestVersion.anonymizedFileId;
+    }
+  }
+
   // Create or update Article record
   const slugBase = sub.title
     .toLowerCase()

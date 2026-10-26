@@ -6,6 +6,9 @@ import { JOURNAL } from "@/lib/constants";
 import { IssueCover } from "@/components/issue/IssueCover";
 import { ArticleListItem } from "@/components/article/ArticleListItem";
 import { getIssue, DEMO_ISSUES } from "@/lib/demo-data";
+import { getLiveIssue } from "@/lib/public-data";
+
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return DEMO_ISSUES.map((i) => ({
@@ -20,7 +23,7 @@ export async function generateMetadata({
   params: Promise<{ volume: string; issue: string }>;
 }): Promise<Metadata> {
   const { volume, issue } = await params;
-  const data = getIssue(Number(volume), Number(issue));
+  const data = (await getLiveIssue(Number(volume), Number(issue))) ?? getIssue(Number(volume), Number(issue));
   if (!data) return { title: "Issue not found" };
   return {
     title: `Volume ${data.volumeNumber}, Number ${data.number} (${data.volumeYear})`,
@@ -34,7 +37,7 @@ export default async function IssuePage({
   params: Promise<{ volume: string; issue: string }>;
 }) {
   const { volume, issue } = await params;
-  const data = getIssue(Number(volume), Number(issue));
+  const data = (await getLiveIssue(Number(volume), Number(issue))) ?? getIssue(Number(volume), Number(issue));
   if (!data) notFound();
 
   return (

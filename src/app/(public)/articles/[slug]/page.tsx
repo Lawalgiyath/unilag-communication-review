@@ -25,6 +25,9 @@ import {
   DEMO_ARTICLES,
   type DemoArticle,
 } from "@/lib/demo-data";
+import { getLiveArticle } from "@/lib/public-data";
+
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return DEMO_ARTICLES.map((a) => ({ slug: a.slug }));
@@ -77,7 +80,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getLiveArticle(slug);
   if (!article) return { title: "Article not found" };
   const baseUrl = siteUrl();
   const scholar = toScholar(article, baseUrl);
@@ -101,7 +104,7 @@ export default async function ArticlePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getLiveArticle(slug);
   if (!article) notFound();
 
   const baseUrl = siteUrl();

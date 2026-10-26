@@ -6,14 +6,17 @@ import { IssueCover } from "@/components/issue/IssueCover";
 import { ArticleListItem } from "@/components/article/ArticleListItem";
 import { JOURNAL } from "@/lib/constants";
 import { getCurrentIssue } from "@/lib/demo-data";
+import { getLiveCurrentIssue } from "@/lib/public-data";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Current Issue",
   description: "The latest issue of UNILAG Communication Review.",
 };
 
-export default function CurrentPage() {
-  const data = getCurrentIssue();
+export default async function CurrentPage() {
+  const data = (await getLiveCurrentIssue()) ?? getCurrentIssue();
   if (!data) notFound();
 
   return (

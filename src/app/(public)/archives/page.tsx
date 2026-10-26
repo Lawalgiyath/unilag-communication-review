@@ -4,13 +4,18 @@ import { format } from "date-fns";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { IssueCover } from "@/components/issue/IssueCover";
 import { DEMO_VOLUMES } from "@/lib/demo-data";
+import { getLiveArchives } from "@/lib/public-data";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Archives",
   description: "Browse all published volumes and issues of UNILAG Communication Review.",
 };
 
-export default function ArchivesPage() {
+export default async function ArchivesPage() {
+  const volumes = await getLiveArchives();
+
   return (
     <div>
       <h1 className="font-display text-3xl font-semibold text-ink sm:text-4xl">
@@ -22,7 +27,7 @@ export default function ArchivesPage() {
       </p>
 
       <div className="mt-10 space-y-12">
-        {DEMO_VOLUMES.map((volume) => (
+        {volumes.map((volume) => (
           <section key={volume.id} aria-labelledby={`vol-${volume.number}`}>
             <SectionLabel>
               <span id={`vol-${volume.number}`}>

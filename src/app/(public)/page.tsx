@@ -8,11 +8,16 @@ import {
   type ArticleListItemData,
 } from "@/components/article/ArticleListItem";
 import {
+  getLiveCurrentIssue,
+  getLiveLatestArticles,
+} from "@/lib/public-data";
+import {
   getCurrentIssue,
   getLatestArticles,
   DEMO_ANNOUNCEMENTS,
   type DemoArticle,
 } from "@/lib/demo-data";
+import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -31,9 +36,18 @@ function toListItem(a: DemoArticle): ArticleListItemData {
 }
 
 export default async function HomePage() {
-  const currentIssue = getCurrentIssue();
-  const latestArticles = getLatestArticles(10);
-  const announcements = DEMO_ANNOUNCEMENTS.slice(0, 3);
+  const currentIssue = (await getLiveCurrentIssue()) ?? getCurrentIssue();
+  const latestArticles = await getLiveLatestArticles(10);
+  let announcements = DEMO_ANNOUNCEMENTS.slice(0, 3);
+  try {
+    const fromDb = await db.announcement.findMany({
+      orderBy: { publishedAt: "desc" },
+      take: 3,
+    });
+    if (fromDb.length > 0) {
+      announcements = fromDb as any;
+    }
+  } catch {}
 
   return (
     <div className="grid gap-12 lg:grid-cols-[1fr_320px]">
