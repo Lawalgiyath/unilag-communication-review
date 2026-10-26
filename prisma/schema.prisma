@@ -21,9 +21,11 @@ model User {
   orcid        String?
   bio          String?
   country      String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive               Boolean   @default(true)
+  deletedAt              DateTime?
+  scheduledDeletionDate  DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   roles               UserRole[]
   sessions            Session[]
@@ -344,7 +346,20 @@ model Page {
   updatedAt   DateTime @updatedAt
   updatedById String?
 
-  updatedBy User? @relation(fields: [updatedById], references: [id])
+  updatedBy User?          @relation(fields: [updatedById], references: [id])
+  revisions PageRevision[]
+}
+
+model PageRevision {
+  id        String   @id @default(cuid())
+  pageId    String
+  title     String
+  body      String // snapshot of markdown body
+  createdAt DateTime @default(now())
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
 }
 
 model Announcement {
@@ -353,8 +368,28 @@ model Announcement {
   title       String
   body        String // markdown
   kind        String // NEWS | CALL_FOR_PAPERS
+  imageUrl    String?
+  linkUrl     String?
+  linkText    String?
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
+
+  revisions AnnouncementRevision[]
+}
+
+model AnnouncementRevision {
+  id             String   @id @default(cuid())
+  announcementId String
+  title          String
+  body           String
+  imageUrl       String?
+  linkUrl        String?
+  linkText       String?
+  createdAt      DateTime @default(now())
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@index([announcementId])
 }
 
 model BoardMember {

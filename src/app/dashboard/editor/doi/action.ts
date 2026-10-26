@@ -43,10 +43,14 @@ export async function saveZenodoConfigAction(formData: FormData) {
   return { success: true };
 }
 
-export async function testConnectionAction() {
+export async function testConnectionAction(configOverride?: {
+  accessToken?: string;
+  isSandbox?: boolean;
+  community?: string;
+}) {
   const user = await requireSession();
   await requireRole(user, ["EDITOR", "ADMIN"]);
-  return await testZenodoConnection();
+  return await testZenodoConnection(configOverride);
 }
 
 export async function mintSingleDoiAction(articleId: string) {

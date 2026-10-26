@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { StyledFileInput } from "@/components/StyledFileInput";
 import { reviseAction } from "./action";
 import type { ReviseState } from "./action";
 import { use } from "react";
@@ -54,31 +55,24 @@ export default function RevisePage({
           )}
         </div>
 
-        <div className="field">
-          <label htmlFor="manuscript" className="field-label">
-            Revised anonymized manuscript <span aria-hidden="true" className="text-error">*</span>
-          </label>
-          <span className="field-hint">PDF or Word (.docx), max 10 MB. No author names.</span>
-          <input
-            id="manuscript"
-            type="file"
-            name="manuscript"
-            accept=".pdf,.doc,.docx"
-            required
-            aria-invalid={!!state.errors?.manuscript}
-            className="w-auto"
-          />
-          {state.errors?.manuscript && (
-            <span className="field-error">{state.errors.manuscript[0]}</span>
-          )}
-        </div>
+        <StyledFileInput
+          id="manuscript"
+          name="manuscript"
+          label="Revised anonymized manuscript"
+          hint="PDF or Word (.docx), max 10 MB. No author names."
+          accept=".pdf,.doc,.docx"
+          required
+          error={state.errors?.manuscript?.[0]}
+        />
 
-        <div className="field">
-          <label htmlFor="titlePage" className="field-label">
-            Updated title page <span className="font-normal text-secondary">(optional)</span>
-          </label>
-          <input id="titlePage" type="file" name="titlePage" accept=".pdf,.doc,.docx" className="w-auto" />
-        </div>
+        <StyledFileInput
+          id="titlePage"
+          name="titlePage"
+          label="Updated title page (optional)"
+          hint="Separate PDF or Word document with full author details, affiliations, and acknowledgements. Max 10 MB."
+          accept=".pdf,.doc,.docx"
+          error={state.errors?.titlePage?.[0]}
+        />
 
         {state.errors?.form && (
           <div className="alert alert-error">{state.errors.form[0]}</div>

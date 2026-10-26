@@ -45,3 +45,10 @@ export async function updateSettingsAction(
 
   return { success: true };
 }
+
+export async function testEmailAction(targetEmail?: string): Promise<{ ok: boolean; message: string }> {
+  const user = await requireSession();
+  await requireRole(user, ["EDITOR", "ADMIN"]);
+  const { testSmtpConnection } = await import("@/lib/email");
+  return await testSmtpConnection(targetEmail?.trim() || user.email);
+}

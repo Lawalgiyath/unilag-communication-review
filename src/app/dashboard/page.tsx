@@ -9,8 +9,14 @@ import { formatSubmissionNumber } from "@/lib/types";
 export const metadata: Metadata = { title: "My Submissions" };
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ restored?: string }>;
+}) {
   const user = await requireSession();
+  const sp = searchParams ? await searchParams : undefined;
+  const isRestored = sp?.restored === "true";
 
   const submissions = await db.submission.findMany({
     where: { correspondingAuthorId: user.id },
@@ -40,6 +46,12 @@ export default async function DashboardPage() {
           + New Submission
         </Link>
       </div>
+
+      {isRestored && (
+        <div className="alert alert-success mb-6">
+          <strong>Welcome Back!</strong> Your account deletion request was cancelled and your account has been successfully restored. All your papers, reviews, and profile data have been preserved.
+        </div>
+      )}
 
       {submissions.length === 0 && (
         <div className="border border-hairline p-10 text-center">

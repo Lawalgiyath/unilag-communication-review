@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
-import { updateSettingsAction } from "./action";
+import { useState, useActionState, useTransition } from "react";
+import { updateSettingsAction, testEmailAction } from "./action";
 import type { SettingsState } from "./action";
 
 const initialState: SettingsState = {};
@@ -14,10 +14,21 @@ export default function SettingsClient({
   defaults: Record<string, string>;
 }) {
   const [state, formAction, pending] = useActionState<SettingsState, FormData>(updateSettingsAction, initialState);
+  const [testEmailTarget, setTestEmailTarget] = useState("");
+  const [testEmailResult, setTestEmailResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [testingEmail, startTestingEmail] = useTransition();
 
   function getVal(key: string) {
     return settings[key] ?? defaults[key] ?? "";
   }
+
+  const handleTestEmail = () => {
+    startTestingEmail(async () => {
+      setTestEmailResult(null);
+      const res = await testEmailAction(testEmailTarget);
+      setTestEmailResult(res);
+    });
+  };
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -105,6 +116,99 @@ export default function SettingsClient({
               <label htmlFor="doiPrefix" className="field-label">DOI Prefix</label>
               <input id="doiPrefix" type="text" name="doiPrefix" defaultValue={getVal("doiPrefix") || "10.5281/zenodo"} />
             </div>
+          </div>
+        </fieldset>
+
+        {/* SMTP & Automated Email Delivery Configuration */}
+        <fieldset className="border border-hairline p-5">
+          <legend className="px-2 text-xs font-semibold uppercase tracking-[0.14em] text-maroon">
+            Automated Email Delivery (SMTP)
+          </legend>
+          <p className="mt-1 text-xs text-secondary">
+            Configures automated system emails for new user registrations, manuscript submissions, reviewer invitations, editorial decisions, and publication alerts.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="field">
+              <label htmlFor="smtp_host" className="field-label">SMTP Host</label>
+              <input
+                id="smtp_host"
+                type="text"
+                name="smtp_host"
+                defaultValue={getVal("smtp_host") || "smtp.gmail.com"}
+                placeholder="smtp.gmail.com"
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="smtp_port" className="field-label">SMTP Port</label>
+              <input
+                id="smtp_port"
+                type="number"
+                name="smtp_port"
+                defaultValue={getVal("smtp_port") || "465"}
+                placeholder="465"
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="smtp_user" className="field-label">SMTP Username / Email</label>
+              <input
+                id="smtp_user"
+                type="email"
+                name="smtp_user"
+                defaultValue={getVal("smtp_user") || "lawalgiyath200716@gmail.com"}
+                placeholder="e.g. editorial@unilag.edu.ng"
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="smtp_pass" className="field-label">SMTP Password / App Password</label>
+              <input
+                id="smtp_pass"
+                type="password"
+                name="smtp_pass"
+                defaultValue={getVal("smtp_pass") || "rosgjlmbnvlfudov"}
+                placeholder="Google App Password (16 characters)"
+                required
+              />
+            </div>
+            <div className="field sm:col-span-2">
+              <label htmlFor="smtp_from" className="field-label">From Name & Address</label>
+              <input
+                id="smtp_from"
+                type="text"
+                name="smtp_from"
+                defaultValue={getVal("smtp_from") || "UNILAG Communication Review <lawalgiyath200716@gmail.com>"}
+                placeholder="UNILAG Communication Review <editorial@unilag.edu.ng>"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 border-t border-hairline pt-4">
+            <p className="text-xs font-semibold text-ink">Test Email Delivery</p>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+              <input
+                type="email"
+                placeholder="Enter recipient email for test message"
+                value={testEmailTarget}
+                onChange={(e) => setTestEmailTarget(e.target.value)}
+                className="text-xs"
+              />
+              <button
+                type="button"
+                onClick={handleTestEmail}
+                disabled={testingEmail}
+                className="btn btn-secondary btn-sm whitespace-nowrap"
+              >
+                {testingEmail ? "Sending Test…" : "Send Test Email"}
+              </button>
+            </div>
+            {testEmailResult && (
+              <div className={`mt-2 p-2 text-xs ${testEmailResult.ok ? "bg-green-50 text-green-800 border border-green-200" : "bg-red-50 text-red-800 border border-red-200"}`}>
+                {testEmailResult.message}
+              </div>
+            )}
           </div>
         </fieldset>
 

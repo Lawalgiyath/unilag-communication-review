@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, use } from "react";
+import { useActionState, use, useState } from "react";
 import Link from "next/link";
 import { ARTICLE_TYPES } from "@/lib/constants";
 import { JOURNAL } from "@/lib/constants";
+import { StyledFileInput } from "@/components/StyledFileInput";
 import {
   step1Action, type Step1State,
   step2Action, type Step2State,
@@ -126,47 +127,119 @@ function Step1Form({ submissionId }: { submissionId?: string }) {
 // ─── Step 2 ───────────────────────────────────────────────────────────────────
 
 function Step2Form({ submissionId }: { submissionId: string }) {
-  const [state, formAction, pending] = useActionState<Step2State, FormData>(step2Action, {});
+  const [state, formAction, pending] = useActionState<Step2State, FormData>(
+    step2Action,
+    {}
+  );
+  const [coAuthorKeys, setCoAuthorKeys] = useState<number[]>([0]);
+
+  const addCoAuthor = () => {
+    setCoAuthorKeys((prev) => [...prev, (prev.at(-1) ?? 0) + 1]);
+  };
+
+  const removeCoAuthor = (key: number) => {
+    setCoAuthorKeys((prev) => prev.filter((k) => k !== key));
+  };
 
   return (
     <form action={formAction} className="space-y-6">
       <input type="hidden" name="submissionId" value={submissionId} />
 
       <div className="alert alert-info">
-        You (the corresponding author) are already listed as Author 1. Add co-authors below. Leave all fields empty if there are no co-authors.
+        You (the corresponding author) are already listed as Author 1. Use the
+        button below to add co-authors. If there are no co-authors, you can leave
+        the fields blank or remove the slot and proceed.
       </div>
 
-      {[0, 1, 2, 3, 4].map((i) => (
-        <fieldset key={i} className="border border-hairline p-4">
-          <legend className="px-1 text-sm font-semibold text-secondary">
-            Co-author {i + 2}
-          </legend>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      {coAuthorKeys.map((key, index) => (
+        <fieldset key={key} className="border border-hairline p-4">
+          <div className="flex items-center justify-between mb-3">
+            <legend className="px-1 text-sm font-semibold text-secondary">
+              Co-author {index + 2}
+            </legend>
+            {coAuthorKeys.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeCoAuthor(key)}
+                className="text-xs text-red-600 hover:text-red-800"
+              >
+                ✕ Remove
+              </button>
+            )}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="field">
-              <label htmlFor={`aname-${i}`} className="field-label">Full name</label>
-              <input id={`aname-${i}`} type="text" name="authorName" placeholder="First Last" />
+              <label htmlFor={`aname-${key}`} className="field-label">
+                Full name
+              </label>
+              <input
+                id={`aname-${key}`}
+                type="text"
+                name="authorName"
+                placeholder="First Last"
+              />
             </div>
             <div className="field">
-              <label htmlFor={`aemail-${i}`} className="field-label">Email</label>
-              <input id={`aemail-${i}`} type="email" name="authorEmail" />
+              <label htmlFor={`aemail-${key}`} className="field-label">
+                Email
+              </label>
+              <input
+                id={`aemail-${key}`}
+                type="email"
+                name="authorEmail"
+                placeholder="coauthor@institution.edu"
+              />
             </div>
             <div className="field">
-              <label htmlFor={`aaff-${i}`} className="field-label">Affiliation</label>
-              <input id={`aaff-${i}`} type="text" name="authorAffiliation" />
+              <label htmlFor={`aaff-${key}`} className="field-label">
+                Affiliation
+              </label>
+              <input
+                id={`aaff-${key}`}
+                type="text"
+                name="authorAffiliation"
+                placeholder="Department & University"
+              />
             </div>
             <div className="field">
-              <label htmlFor={`aorcid-${i}`} className="field-label">ORCID</label>
-              <input id={`aorcid-${i}`} type="text" name="authorOrcid" placeholder="0000-0000-0000-0000" />
+              <label htmlFor={`aorcid-${key}`} className="field-label">
+                ORCID iD
+              </label>
+              <input
+                id={`aorcid-${key}`}
+                type="text"
+                name="authorOrcid"
+                placeholder="0000-0000-0000-0000"
+              />
             </div>
           </div>
         </fieldset>
       ))}
 
-      <div className="flex justify-between">
-        <Link href={`/dashboard/submissions/new?step=1&id=${submissionId}`} className="btn btn-secondary">
+      <div>
+        <button
+          type="button"
+          onClick={addCoAuthor}
+          className="btn btn-secondary btn-sm inline-flex items-center gap-1.5"
+        >
+          <span className="font-bold text-base leading-none">+</span>
+          <span>Add Co-Author</span>
+        </button>
+      </div>
+
+      <div className="flex justify-between pt-2">
+        <Link
+          href={`/dashboard/submissions/new?step=1&id=${submissionId}`}
+          className="btn btn-secondary"
+        >
           ← Back
         </Link>
-        <button type="submit" disabled={pending} className="btn btn-primary" aria-busy={pending}>
+        <button
+          type="submit"
+          disabled={pending}
+          className="btn btn-primary"
+          aria-busy={pending}
+        >
           {pending ? "Saving…" : "Continue to Files →"}
         </button>
       </div>
@@ -177,39 +250,51 @@ function Step2Form({ submissionId }: { submissionId: string }) {
 // ─── Step 3 ───────────────────────────────────────────────────────────────────
 
 function Step3Form({ submissionId }: { submissionId: string }) {
-  const [state, formAction, pending] = useActionState<Step3State, FormData>(step3Action, {});
+  const [state, formAction, pending] = useActionState<Step3State, FormData>(
+    step3Action,
+    {}
+  );
 
   return (
-    <form action={formAction} encType="multipart/form-data" className="space-y-5">
+    <form
+      action={formAction}
+      encType="multipart/form-data"
+      className="space-y-6"
+    >
       <input type="hidden" name="submissionId" value={submissionId} />
 
-      <div className="field">
-        <label htmlFor="manuscript" className="field-label">
-          Anonymized manuscript <span aria-hidden="true" className="text-error">*</span>
-        </label>
-        <span className="field-hint">
-          PDF or Word (.docx) file, max 10 MB. Remove all author names, affiliations, and self-identifying references.
-        </span>
-        <input id="manuscript" type="file" name="manuscript" accept=".pdf,.doc,.docx" required
-          aria-invalid={!!state.errors?.manuscript} className="w-auto" />
-        {state.errors?.manuscript && <span className="field-error">{state.errors.manuscript[0]}</span>}
-      </div>
+      <StyledFileInput
+        id="manuscript"
+        name="manuscript"
+        label="Anonymized manuscript"
+        hint="PDF or Word (.docx) file, max 10 MB. Remove all author names, affiliations, and self-identifying references."
+        accept=".pdf,.doc,.docx"
+        required
+        error={state.errors?.manuscript?.[0]}
+      />
 
-      <div className="field">
-        <label htmlFor="titlePage" className="field-label">
-          Title page <span className="font-normal text-secondary">(optional)</span>
-        </label>
-        <span className="field-hint">
-          Separate PDF with full author details, affiliations, acknowledgements. Max 10 MB.
-        </span>
-        <input id="titlePage" type="file" name="titlePage" accept=".pdf,.doc,.docx" className="w-auto" />
-      </div>
+      <StyledFileInput
+        id="titlePage"
+        name="titlePage"
+        label="Title page (optional)"
+        hint="Separate PDF or Word document with full author details, affiliations, and acknowledgements. Max 10 MB."
+        accept=".pdf,.doc,.docx"
+        error={state.errors?.titlePage?.[0]}
+      />
 
-      <div className="flex justify-between">
-        <Link href={`/dashboard/submissions/new?step=2&id=${submissionId}`} className="btn btn-secondary">
+      <div className="flex justify-between pt-2">
+        <Link
+          href={`/dashboard/submissions/new?step=2&id=${submissionId}`}
+          className="btn btn-secondary"
+        >
           ← Back
         </Link>
-        <button type="submit" disabled={pending} className="btn btn-primary" aria-busy={pending}>
+        <button
+          type="submit"
+          disabled={pending}
+          className="btn btn-primary"
+          aria-busy={pending}
+        >
           {pending ? "Uploading…" : "Continue to Review →"}
         </button>
       </div>

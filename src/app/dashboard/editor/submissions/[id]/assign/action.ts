@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, brandedEmailHtml } from "@/lib/email";
 import { JOURNAL, siteUrl } from "@/lib/constants";
 
 const AssignSchema = z.object({
@@ -93,10 +93,33 @@ export async function assignReviewerAction(
     await db.userRole.create({ data: { userId: reviewer.id, role: "REVIEWER" } });
   }
 
+  const inviteUrl = `${siteUrl()}/dashboard/reviews/${assignment.id}`;
+  const formattedDueDate = new Date(dueDate).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
   await sendEmail({
     to: reviewer.email,
-    subject: `Invitation to review: ${JOURNAL.shortTitle}`,
-    text: `Dear ${reviewer.name},\n\nYou have been invited to review a manuscript submitted to ${JOURNAL.title}.\n\nPlease log in to respond to this invitation: ${siteUrl()}/dashboard/reviews/${assignment.id}\n\nDue date: ${new Date(dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}\n${note ? `\nNote from editor: ${note}\n` : ""}\nWarm regards,\n${JOURNAL.title} Editorial Office`,
+    subject: `Invitation to review manuscript: ${JOURNAL.shortTitle}`,
+    text: `Dear ${reviewer.name},\n\nYou have been invited to review a manuscript submitted to ${JOURNAL.title}.\n\nTitle: "${sub.title}"\nDue date: ${formattedDueDate}\n\nPlease click the link below to respond:\n${inviteUrl}\n\n${note ? `Note from editor:\n${note}\n\n` : ""}Warm regards,\n${JOURNAL.title} Editorial Office`,
+    html: brandedEmailHtml({
+      title: `Peer Review Invitation - ${JOURNAL.title}`,
+      bodyHtml: `
+        <h3 style="color: #7b1113; margin-top: 0;">Peer Review Invitation</h3>
+        <p>Dear <strong>${reviewer.name}</strong>,</p>
+        <p>You have been invited by the Editorial Office to review a manuscript submitted to <strong>${JOURNAL.title}</strong>.</p>
+        <div style="background-color: #f7f6f2; border-left: 3px solid #7b1113; padding: 14px 18px; margin: 18px 0; border-radius: 2px;">
+          <p style="margin: 0; font-size: 15px; font-weight: 600; color: #1a1a1a;">${sub.title}</p>
+          <p style="margin: 8px 0 0 0; font-size: 13px; color: #666666;">Due Date: <strong>${formattedDueDate}</strong></p>
+        </div>
+        ${note ? `<div style="background-color: #ffffff; border: 1px solid #e5e5e0; padding: 12px 16px; margin: 16px 0; border-radius: 4px;"><p style="margin: 0 0 4px 0; font-size: 11px; text-transform: uppercase; color: #666666; font-weight: 600; letter-spacing: 0.05em;">Note from Editor:</p><p style="margin: 0; font-size: 14px; font-style: italic; color: #333333;">${note}</p></div>` : ""}
+        <p>Please click the button below to view the manuscript abstract and respond to this review invitation:</p>
+      `,
+      ctaText: "Respond to Review Invitation",
+      ctaUrl: inviteUrl,
+    }),
     template: "reviewer_invited",
   });
 

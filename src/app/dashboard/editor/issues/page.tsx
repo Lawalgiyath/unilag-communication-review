@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { format } from "date-fns";
 import { db } from "@/lib/db";
+import { DeleteIssueButton } from "./DeleteIssueButton";
 
 export const metadata: Metadata = { title: "Issues" };
 export const dynamic = "force-dynamic";
@@ -9,7 +10,16 @@ export const dynamic = "force-dynamic";
 export default async function IssuesPage() {
   const volumes = await db.volume.findMany({
     orderBy: { number: "desc" },
-    include: { issues: { orderBy: { number: "asc" } } },
+    include: {
+      issues: {
+        orderBy: { number: "asc" },
+        include: {
+          _count: {
+            select: { articles: true },
+          },
+        },
+      },
+    },
   });
 
   return (
@@ -25,11 +35,17 @@ export default async function IssuesPage() {
       </div>
 
       {volumes.length === 0 && (
-        <p className="text-sm text-secondary">No volumes yet. Create the first issue to get started.</p>
+        <p className="text-sm text-secondary">
+          No volumes yet. Create the first issue to get started.
+        </p>
       )}
 
       {volumes.map((vol) => (
-        <section key={vol.id} aria-labelledby={`vol-${vol.id}`} className="mb-8">
+        <section
+          key={vol.id}
+          aria-labelledby={`vol-${vol.id}`}
+          className="mb-8"
+        >
           <h2 id={`vol-${vol.id}`} className="section-label mb-3">
             Volume {vol.number} ({vol.year})
           </h2>
@@ -41,7 +57,7 @@ export default async function IssuesPage() {
                 <th>Published</th>
                 <th>Articles</th>
                 <th>Current?</th>
-                <th></th>
+                <th className="text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -50,18 +66,35 @@ export default async function IssuesPage() {
                   <td className="font-mono text-sm">No. {issue.number}</td>
                   <td className="text-sm text-ink">{issue.title ?? "—"}</td>
                   <td className="whitespace-nowrap text-sm text-secondary">
-                    {issue.publishedAt ? format(issue.publishedAt, "d MMM yyyy") : "Unpublished"}
+                    {issue.publishedAt
+                      ? format(issue.publishedAt, "d MMM yyyy")
+                      : "Unpublished"}
                   </td>
-                  <td className="text-sm text-secondary">—</td>
+                  <td className="text-sm font-medium text-ink">
+                    {issue._count.articles}
+                  </td>
                   <td>
                     {issue.isCurrent && (
-                      <span className="status-badge status-PUBLISHED">Current</span>
+                      <span className="status-badge status-PUBLISHED">
+                        Current
+                      </span>
                     )}
                   </td>
-                  <td>
-                    <Link href={`/issues/${vol.number}/${issue.number}`} className="btn btn-ghost btn-sm" target="_blank">
-                      View →
-                    </Link>
+                  <td className="text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-2">
+                      <Link
+                        href={`/issues/${vol.number}/${issue.number}`}
+                        className="btn btn-ghost btn-sm"
+                        target="_blank"
+                      >
+                        View →
+                      </Link>
+                      <DeleteIssueButton
+                        issueId={issue.id}
+                        issueLabel={`Vol. ${vol.number}, No. ${issue.number}`}
+                        articleCount={issue._count.articles}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}

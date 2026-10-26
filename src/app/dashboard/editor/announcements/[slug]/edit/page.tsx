@@ -12,7 +12,15 @@ export default async function EditAnnouncementPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const item = await db.announcement.findUnique({ where: { slug } });
+  const item = await db.announcement.findUnique({
+    where: { slug },
+    include: {
+      revisions: {
+        orderBy: { createdAt: "desc" },
+        take: 2,
+      },
+    },
+  });
 
   if (!item) notFound();
 

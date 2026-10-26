@@ -13,7 +13,15 @@ export default async function EditPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const page = await db.page.findUnique({ where: { slug } });
+  const page = await db.page.findUnique({
+    where: { slug },
+    include: {
+      revisions: {
+        orderBy: { createdAt: "desc" },
+        take: 2,
+      },
+    },
+  });
 
   if (!page) notFound();
 
@@ -28,7 +36,13 @@ export default async function EditPage({
           View public page ↗
         </Link>
       </div>
-      <EditPageForm slug={page.slug} title={page.title} body={page.body} />
+      <EditPageForm
+        pageId={page.id}
+        slug={page.slug}
+        title={page.title}
+        body={page.body}
+        revisions={page.revisions}
+      />
     </div>
   );
 }

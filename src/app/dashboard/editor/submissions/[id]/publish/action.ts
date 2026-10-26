@@ -86,8 +86,44 @@ export async function publishAction(_prev: PublishState, formData: FormData): Pr
     .map((k) => k.trim().toLowerCase().replace(/\s+/g, "-"))
     .filter(Boolean);
 
-  const settings = await getSettings();
-  const autoDoi = d.doi || existingArticle?.doi || `${settings.doiPrefix}/ucr.${new Date(d.publishedDate).getFullYear()}.${slugBase.slice(0, 12)}`;
+  // DOI resolution
+  let doi: string | null = d.doi?.trim() || existingArticle?.doi || null;
+
+  // If no manual DOI, attempt real Zenodo DOI minting if configured
+  if (!doi) {
+    try {
+      const { depositAndMintZenodoDoi, getZenodoConfig } = await import("@/lib/zenodo");
+      const zenodoCfg = await getZenodoConfig();
+      if (zenodoCfg.accessToken) {
+        const targetIssue = await db.issue.findUnique({
+          where: { id: d.issueId },
+          include: { volume: true },
+        });
+        const zenodoRes = await depositAndMintZenodoDoi({
+          slug,
+          title: sub.title,
+          abstract: sub.abstract,
+          authors: sub.authors.map((a) => ({
+            name: a.name,
+            affiliation: a.affiliation,
+            orcid: a.orcid,
+          })),
+          keywords,
+          volumeNumber: targetIssue?.volume.number ?? 9,
+          issueNumber: targetIssue?.number ?? 2,
+          volumeYear: targetIssue?.volume.year ?? new Date().getFullYear(),
+          firstPage: d.firstPage,
+          lastPage: d.lastPage,
+          publishImmediately: true,
+        });
+        if (zenodoRes.success && zenodoRes.doi) {
+          doi = zenodoRes.doi;
+        }
+      }
+    } catch (zenodoErr) {
+      console.warn("[publish:zenodo] Auto-minting error:", zenodoErr);
+    }
+  }
 
   const article = await db.article.upsert({
     where: { submissionId },
@@ -99,7 +135,7 @@ export async function publishAction(_prev: PublishState, formData: FormData): Pr
       articleType: sub.articleType,
       status: "PUBLISHED",
       issueId: d.issueId,
-      doi: autoDoi,
+      doi,
       firstPage: d.firstPage ?? null,
       lastPage: d.lastPage ?? null,
       receivedDate: d.receivedDate ? new Date(d.receivedDate) : null,
@@ -109,7 +145,7 @@ export async function publishAction(_prev: PublishState, formData: FormData): Pr
     },
     update: {
       issueId: d.issueId,
-      doi: autoDoi,
+      doi,
       firstPage: d.firstPage ?? null,
       lastPage: d.lastPage ?? null,
       receivedDate: d.receivedDate ? new Date(d.receivedDate) : null,
@@ -164,6 +200,13 @@ export async function publishAction(_prev: PublishState, formData: FormData): Pr
 
   // Reindex FTS
   await reindexArticle(article.id);
+
+  // Revalidate entire site cache so article appears live immediately
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/", "layout");
+  revalidatePath("/archives");
+  revalidatePath("/current");
+  revalidatePath(`/articles/${article.slug}`);
 
   await sendEmail({
     to: sub.correspondingAuthor.email,

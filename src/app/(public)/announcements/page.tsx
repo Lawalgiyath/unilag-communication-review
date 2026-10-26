@@ -18,6 +18,9 @@ export default async function AnnouncementsPage() {
     id: string;
     slug: string;
     title: string;
+    imageUrl?: string | null;
+    linkUrl?: string | null;
+    linkText?: string | null;
     publishedAt: Date | null;
   }> = [];
 
@@ -43,15 +46,38 @@ export default async function AnnouncementsPage() {
 
       <div className="mt-8 space-y-0 divide-y divide-hairline">
         {announcements.map((ann) => (
-          <article key={ann.id} className="py-6">
-            <h2 className="font-display text-xl font-semibold text-ink">
-              <Link href={`/announcements/${ann.slug}`} className="hover:text-maroon">
-                {ann.title}
-              </Link>
-            </h2>
-            <p className="mt-1 text-xs text-secondary">
-              {ann.publishedAt ? format(ann.publishedAt, "d MMMM yyyy") : ""}
-            </p>
+          <article key={ann.id} className="py-6 flex flex-col sm:flex-row gap-5 items-start">
+            {ann.imageUrl && (
+              <div className="w-full sm:w-48 h-32 flex-shrink-0 bg-surface border border-hairline overflow-hidden rounded">
+                <img
+                  src={ann.imageUrl}
+                  alt={ann.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <div className="flex-1">
+              <h2 className="font-display text-xl font-semibold text-ink">
+                <Link href={`/announcements/${ann.slug}`} className="hover:text-maroon">
+                  {ann.title}
+                </Link>
+              </h2>
+              <p className="mt-1 text-xs text-secondary">
+                {ann.publishedAt ? format(ann.publishedAt, "d MMMM yyyy") : ""}
+              </p>
+              {ann.linkUrl && (
+                <div className="mt-3">
+                  <a
+                    href={ann.linkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-xs font-semibold text-maroon hover:underline"
+                  >
+                    {ann.linkText || "Learn more"} ↗
+                  </a>
+                </div>
+              )}
+            </div>
           </article>
         ))}
       </div>

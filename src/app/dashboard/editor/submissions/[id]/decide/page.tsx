@@ -1,10 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useActionState, use } from "react";
 import Link from "next/link";
 import { recordDecisionAction } from "./action";
 import type { DecideState } from "./action";
-import { use } from "react";
 
 const initialState: DecideState = {};
 
@@ -35,16 +34,39 @@ export default function DecidePage({
   const sp = searchParams ? use(searchParams) : {};
   const preselect = sp.type ?? "";
 
-  const [state, formAction, pending] = useActionState<DecideState, FormData>(recordDecisionAction, initialState);
+  const [selectedDecision, setSelectedDecision] = useState(preselect);
+  const [letterText, setLetterText] = useState(
+    preselect ? DECISION_TEMPLATES[preselect] ?? "" : ""
+  );
+
+  const [state, formAction, pending] = useActionState<DecideState, FormData>(
+    recordDecisionAction,
+    initialState
+  );
+
+  const handleDecisionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    setSelectedDecision(val);
+    if (DECISION_TEMPLATES[val]) {
+      setLetterText(DECISION_TEMPLATES[val]);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-2xl">
       <div className="page-header">
         <div>
           <h1 className="page-title">Record Decision</h1>
-          <p className="page-subtitle">This will notify the corresponding author by email</p>
+          <p className="page-subtitle">
+            This will notify the corresponding author by email
+          </p>
         </div>
-        <Link href={`/dashboard/editor/submissions/${id}`} className="btn btn-ghost btn-sm">← Back</Link>
+        <Link
+          href={`/dashboard/editor/submissions/${id}`}
+          className="btn btn-ghost btn-sm"
+        >
+          ← Back
+        </Link>
       </div>
 
       <form action={formAction} className="space-y-5">
@@ -54,11 +76,19 @@ export default function DecidePage({
           <label htmlFor="decision" className="field-label">
             Decision <span aria-hidden="true" className="text-error">*</span>
           </label>
-          <select id="decision" name="decision" defaultValue={preselect} required
-            aria-invalid={!!state.errors?.decision}>
+          <select
+            id="decision"
+            name="decision"
+            value={selectedDecision}
+            onChange={handleDecisionChange}
+            required
+            aria-invalid={!!state.errors?.decision}
+          >
             <option value="">Select decision…</option>
             {DECISION_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
             ))}
           </select>
           {state.errors?.decision && (
@@ -68,10 +98,12 @@ export default function DecidePage({
 
         <div className="field">
           <label htmlFor="letterToAuthor" className="field-label">
-            Letter to author <span aria-hidden="true" className="text-error">*</span>
+            Letter to author{" "}
+            <span aria-hidden="true" className="text-error">*</span>
           </label>
           <span className="field-hint">
-            This will be sent to the corresponding author. Select a decision above to load a template.
+            This will be sent to the corresponding author. Select a decision
+            above to load a template.
           </span>
           <textarea
             id="letterToAuthor"
@@ -79,7 +111,8 @@ export default function DecidePage({
             rows={14}
             required
             aria-invalid={!!state.errors?.letterToAuthor}
-            defaultValue={preselect ? DECISION_TEMPLATES[preselect] ?? "" : ""}
+            value={letterText}
+            onChange={(e) => setLetterText(e.target.value)}
             style={{ minHeight: "320px" }}
           />
           {state.errors?.letterToAuthor && (

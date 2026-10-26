@@ -106,14 +106,25 @@ export async function testZenodoConnection(configOverride?: Partial<ZenodoConfig
   environment: string;
   username?: string;
 }> {
-  const cfg = { ...(await getZenodoConfig()), ...configOverride };
-  const envLabel = cfg.isSandbox ? "Sandbox (sandbox.zenodo.org)" : "Production (zenodo.org)";
+  const baseCfg = await getZenodoConfig();
+  const isSandbox =
+    configOverride?.isSandbox !== undefined
+      ? configOverride.isSandbox
+      : baseCfg.isSandbox;
+  const baseUrl = isSandbox
+    ? "https://sandbox.zenodo.org/api"
+    : "https://zenodo.org/api";
+  const cfg = { ...baseCfg, ...configOverride, isSandbox, baseUrl };
+  const envLabel = cfg.isSandbox
+    ? "Sandbox (sandbox.zenodo.org)"
+    : "Production (zenodo.org)";
 
   if (!cfg.accessToken) {
     return {
       ok: false,
       environment: envLabel,
-      message: "No Zenodo access token provided. Please configure ZENODO_ACCESS_TOKEN.",
+      message:
+        "No Zenodo access token provided. Please enter your personal access token.",
     };
   }
 
@@ -128,10 +139,13 @@ export async function testZenodoConnection(configOverride?: Partial<ZenodoConfig
     });
 
     if (res.status === 401 || res.status === 403) {
+      const hint = cfg.isSandbox
+        ? "Note: Tokens generated on zenodo.org do not work on sandbox.zenodo.org (and vice-versa). If this is a live zenodo.org token, uncheck 'Use Sandbox'."
+        : "Ensure the token has 'deposit:actions' and 'deposit:write' scopes. If this token was generated on sandbox.zenodo.org, enable 'Use Sandbox'.";
       return {
         ok: false,
         environment: envLabel,
-        message: `Authentication failed (HTTP ${res.status}). Ensure the token has 'deposit:actions' and 'deposit:write' scopes.`,
+        message: `Authentication failed (HTTP ${res.status}). ${hint}`,
       };
     }
 

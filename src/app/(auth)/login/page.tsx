@@ -10,12 +10,13 @@ const initialState: LoginState = {};
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; reset?: string }>;
+  searchParams: Promise<{ next?: string; reset?: string; deletion_scheduled?: string }>;
 }) {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(loginAction, initialState);
   const sp = use(searchParams);
   const next = sp?.next ?? "";
   const resetSuccess = sp?.reset === "success";
+  const deletionScheduled = sp?.deletion_scheduled === "30days";
 
   return (
     <div className="border border-hairline bg-white p-8">
@@ -25,6 +26,12 @@ export default function LoginPage({
       <p className="mt-1 text-sm text-secondary">
         Access your author, reviewer, or editor dashboard.
       </p>
+
+      {deletionScheduled && (
+        <div className="alert alert-info mt-5" role="status">
+          <strong>Account Deletion Scheduled:</strong> Your account is held safely in our 30-day retention grace period. If you change your mind, simply sign in now to cancel the deletion and restore full access immediately.
+        </div>
+      )}
 
       {resetSuccess && (
         <div className="alert alert-success mt-5" role="status">

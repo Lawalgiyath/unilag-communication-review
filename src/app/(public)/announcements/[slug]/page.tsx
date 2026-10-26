@@ -15,7 +15,19 @@ export function generateStaticParams() {
   return DEMO_ANNOUNCEMENTS.map((a) => ({ slug: a.slug }));
 }
 
-async function findAnnouncement(slug: string) {
+interface AnnouncementViewData {
+  id: string;
+  title: string;
+  slug: string;
+  body: string;
+  kind?: string;
+  publishedAt: Date | null;
+  imageUrl?: string | null;
+  linkUrl?: string | null;
+  linkText?: string | null;
+}
+
+async function findAnnouncement(slug: string): Promise<AnnouncementViewData | undefined> {
   try {
     const fromDb = await db.announcement.findUnique({
       where: { slug },
@@ -24,7 +36,14 @@ async function findAnnouncement(slug: string) {
   } catch (e) {
     // ignore
   }
-  return getAnnouncementBySlug(slug);
+  const demo = getAnnouncementBySlug(slug);
+  if (!demo) return undefined;
+  return {
+    ...demo,
+    imageUrl: null,
+    linkUrl: null,
+    linkText: null,
+  };
 }
 
 export async function generateMetadata({
@@ -69,10 +88,33 @@ export default async function AnnouncementPage({
         </p>
       </header>
 
+      {ann.imageUrl && (
+        <div className="mt-6 overflow-hidden rounded-md border border-hairline bg-surface max-h-[420px]">
+          <img
+            src={ann.imageUrl}
+            alt={ann.title}
+            className="w-full h-full object-cover max-h-[420px]"
+          />
+        </div>
+      )}
+
       <div
         className="prose-journal mt-8"
         dangerouslySetInnerHTML={{ __html: html }}
       />
+
+      {ann.linkUrl && (
+        <div className="mt-10 pt-6 border-t border-hairline">
+          <a
+            href={ann.linkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-primary inline-flex items-center gap-2"
+          >
+            {ann.linkText || "Visit External Link"} ↗
+          </a>
+        </div>
+      )}
     </div>
   );
 }

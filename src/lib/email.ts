@@ -24,41 +24,80 @@ export function cleanEmailText(str: string): string {
     .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, ""); // strip emojis
 }
 
-function transporter() {
-  const host = process.env.SMTP_HOST;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS?.replace(/\s+/g, "");
+async function getTransporterAndFrom() {
+  let host = process.env.SMTP_HOST;
+  let user = process.env.SMTP_USER;
+  let pass = process.env.SMTP_PASS?.replace(/\s+/g, "");
+  let port = Number(process.env.SMTP_PORT ?? 465);
+  let from =
+    process.env.SMTP_FROM ??
+    "UNILAG Communication Review <lawalgiyath200716@gmail.com>";
+
+  if (!user || !pass) {
+    try {
+      const rows = await db.setting.findMany({
+        where: {
+          key: {
+            in: [
+              "smtp_host",
+              "smtp_user",
+              "smtp_pass",
+              "smtp_port",
+              "smtp_from",
+            ],
+          },
+        },
+      });
+      const map = new Map(rows.map((r) => [r.key, r.value]));
+      if (map.get("smtp_host")) host = map.get("smtp_host")!;
+      if (map.get("smtp_user")) user = map.get("smtp_user")!;
+      if (map.get("smtp_pass")) pass = map.get("smtp_pass")!.replace(/\s+/g, "");
+      if (map.get("smtp_port")) port = Number(map.get("smtp_port")!);
+      if (map.get("smtp_from")) from = map.get("smtp_from")!;
+    } catch {
+      // fallback
+    }
+  }
 
   // 1. Direct Gmail Support (via service: "gmail")
   if (host === "smtp.gmail.com" || user?.endsWith("@gmail.com")) {
-    if (!user || !pass) return null;
-    return nodemailer.createTransport({
-      service: "gmail",
-      auth: { user, pass },
-    });
+    if (!user || !pass) return { transporter: null, from };
+    return {
+      transporter: nodemailer.createTransport({
+        service: "gmail",
+        auth: { user, pass },
+      }),
+      from,
+    };
   }
 
   // 2. Direct SendGrid API key support
   const sendgridKey = process.env.SENDGRID_API_KEY;
   if (sendgridKey) {
-    return nodemailer.createTransport({
-      host: "smtp.sendgrid.net",
-      port: 587,
-      auth: {
-        user: "apikey",
-        pass: sendgridKey,
-      },
-    });
+    return {
+      transporter: nodemailer.createTransport({
+        host: "smtp.sendgrid.net",
+        port: 587,
+        auth: {
+          user: "apikey",
+          pass: sendgridKey,
+        },
+      }),
+      from,
+    };
   }
 
   // 3. Generic SMTP configuration (UNILAG relay or other SMTP)
-  if (!host) return null;
-  return nodemailer.createTransport({
-    host,
-    port: Number(process.env.SMTP_PORT ?? 587),
-    secure: Number(process.env.SMTP_PORT ?? 587) === 465,
-    auth: user && pass ? { user, pass } : undefined,
-  });
+  if (!host) return { transporter: null, from };
+  return {
+    transporter: nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: user && pass ? { user, pass } : undefined,
+    }),
+    from,
+  };
 }
 
 export function brandedEmailHtml(opts: {
@@ -129,10 +168,7 @@ export function brandedEmailHtml(opts: {
 }
 
 export async function sendEmail(msg: EmailMessage): Promise<void> {
-  const from =
-    process.env.SMTP_FROM ??
-    "UNILAG Communication Review <lawalgiyath200716@gmail.com>";
-  const t = transporter();
+  const { transporter: t, from } = await getTransporterAndFrom();
 
   const sanitizedSubject = cleanEmailText(msg.subject);
   const sanitizedText = cleanEmailText(msg.text);
@@ -178,5 +214,46 @@ async function safeLog(
     });
   } catch {
     // logging must never throw
+  }
+}
+
+export async function testSmtpConnection(targetEmail?: string): Promise<{
+  ok: boolean;
+  message: string;
+}> {
+  const { transporter: t, from } = await getTransporterAndFrom();
+  if (!t) {
+    return {
+      ok: false,
+      message:
+        "No SMTP credentials configured. Please set SMTP settings in Editor Settings or .env.",
+    };
+  }
+
+  try {
+    await t.verify();
+    if (targetEmail) {
+      await t.sendMail({
+        from,
+        to: targetEmail,
+        subject: "UNILAG Communication Review - SMTP Test",
+        text: "This is a test email confirming that automated notifications are functioning properly.",
+        html: brandedEmailHtml({
+          title: "SMTP Configuration Test",
+          bodyHtml: "<p>This is a test notification confirming that the automated email delivery system is active and operating normally.</p>",
+        }),
+      });
+      return {
+        ok: true,
+        message: `SMTP verified and test email sent successfully to ${targetEmail}!`,
+      };
+    }
+    return {
+      ok: true,
+      message: "SMTP server verified successfully and ready to deliver emails.",
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, message: `SMTP verification failed: ${msg}` };
   }
 }

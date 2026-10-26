@@ -3,38 +3,16 @@
  * Uses Crossref's free polite pool: https://api.crossref.org
  */
 
-export interface CrossrefMatch {
-  doi: string;
-  title: string;
-  publisher?: string;
-  url?: string;
-  similarity: number;
-  score?: number;
-}
-
-export interface CrossrefCheckResult {
-  checked: boolean;
-  foundDuplicate: boolean;
-  highestSimilarity: number;
-  matches: CrossrefMatch[];
-  queryTitle: string;
-}
-
-/**
- * Normalizes title text for fair comparison:
- * lowercase, removes non-alphanumeric chars, removes extra spaces.
- */
 export function normalizeTitle(str: string): string {
   return str
     .toLowerCase()
-    .replace(/[^\w\s]/g, " ")
+    .replace(/[^\w\s]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
 
 /**
- * Calculates Sørensen-Dice coefficient on character bigrams (0 to 1).
- * Excellent for detecting identical or slightly modified titles.
+ * Calculates string similarity using word overlap and Dice's coefficient on character bigrams (0.0 to 1.0).
  */
 export function calculateTitleSimilarity(str1: string, str2: string): number {
   const s1 = normalizeTitle(str1);
@@ -78,12 +56,32 @@ export function calculateTitleSimilarity(str1: string, str2: string): number {
     intersection += Math.min(count1, count2);
   }
 
-  const total = (s1.length - 1) + (s2.length - 1);
+  const total = s1.length - 1 + (s2.length - 1);
   return total > 0 ? (2 * intersection) / total : 0;
 }
 
+export interface CrossrefMatch {
+  source?: "Crossref" | "OpenAlex" | "Europe PMC";
+  doi?: string;
+  title: string;
+  publisher?: string;
+  url?: string;
+  similarity: number;
+  score?: number;
+  year?: number | string;
+}
+
+export interface CrossrefCheckResult {
+  checked: boolean;
+  foundDuplicate: boolean;
+  highestSimilarity: number;
+  matches: CrossrefMatch[];
+  queryTitle: string;
+  sourcesScanned?: string[];
+}
+
 /**
- * Searches Crossref Works for possible prior publication or duplicate submissions.
+ * Searches Crossref, OpenAlex, and Europe PMC for possible prior publication or duplicate submissions.
  * Flags matches with similarity >= 0.70.
  */
 export async function checkCrossrefDuplicates(
@@ -100,79 +98,155 @@ export async function checkCrossrefDuplicates(
     };
   }
 
-  try {
-    const politeEmail = process.env.SMTP_USER || "lawalgiyath200716@gmail.com";
-    const url = `https://api.crossref.org/works?query.title=${encodeURIComponent(
-      clean
-    )}&rows=3&select=DOI,title,publisher,score,URL`;
+  const politeEmail = process.env.SMTP_USER || "lawalgiyath200716@gmail.com";
+  const userAgent = `UNILAG-Communication-Review/1.0 (mailto:${politeEmail})`;
+  const sourcesScanned: string[] = [];
+  const matches: CrossrefMatch[] = [];
+  const seenDois = new Set<string>();
+  const seenTitles = new Set<string>();
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000); // 6s max timeout
+  const [crossrefRes, openAlexRes, europePmcRes] = await Promise.allSettled([
+    // 1. Crossref
+    fetch(
+      `https://api.crossref.org/works?query.title=${encodeURIComponent(
+        clean
+      )}&rows=3&select=DOI,title,publisher,score,URL`,
+      {
+        headers: { "User-Agent": userAgent },
+        signal: AbortSignal.timeout(6000),
+      }
+    ),
+    // 2. OpenAlex
+    fetch(
+      `https://api.openalex.org/works?search=${encodeURIComponent(
+        clean
+      )}&per-page=3`,
+      {
+        headers: { "User-Agent": userAgent },
+        signal: AbortSignal.timeout(6000),
+      }
+    ),
+    // 3. Europe PMC
+    fetch(
+      `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(
+        clean
+      )}&format=json&pageSize=3`,
+      {
+        headers: { "User-Agent": userAgent },
+        signal: AbortSignal.timeout(6000),
+      }
+    ),
+  ]);
 
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent": `UNILAG-Communication-Review/1.0 (mailto:${politeEmail})`,
-      },
-      signal: controller.signal,
-    });
+  // Process Crossref
+  if (crossrefRes.status === "fulfilled" && crossrefRes.value.ok) {
+    sourcesScanned.push("Crossref");
+    try {
+      const data = await crossrefRes.value.json();
+      const items = data.message?.items ?? [];
+      for (const item of items) {
+        const itemTitle = item.title?.[0] ?? "";
+        if (!itemTitle) continue;
+        const norm = normalizeTitle(itemTitle);
+        if (seenTitles.has(norm)) continue;
+        seenTitles.add(norm);
+        if (item.DOI) seenDois.add(item.DOI.toLowerCase());
 
-    clearTimeout(timeout);
-
-    if (!res.ok) {
-      console.warn(`[crossref] HTTP error ${res.status}`);
-      return {
-        checked: false,
-        foundDuplicate: false,
-        highestSimilarity: 0,
-        matches: [],
-        queryTitle: title,
-      };
+        const sim = calculateTitleSimilarity(clean, itemTitle);
+        matches.push({
+          source: "Crossref",
+          doi: item.DOI,
+          title: itemTitle,
+          publisher: item.publisher,
+          url: item.URL ?? (item.DOI ? `https://doi.org/${item.DOI}` : undefined),
+          similarity: Math.round(sim * 100) / 100,
+          score: item.score,
+        });
+      }
+    } catch {
+      // ignore
     }
-
-    const data = await res.json();
-    const items = data.message?.items ?? [];
-
-    const matches: CrossrefMatch[] = [];
-    let highestSim = 0;
-
-    for (const item of items) {
-      const itemTitle = item.title?.[0] ?? "";
-      if (!itemTitle) continue;
-
-      const sim = calculateTitleSimilarity(clean, itemTitle);
-      if (sim > highestSim) highestSim = sim;
-
-      matches.push({
-        doi: item.DOI,
-        title: itemTitle,
-        publisher: item.publisher,
-        url: item.URL ?? `https://doi.org/${item.DOI}`,
-        similarity: Math.round(sim * 100) / 100,
-        score: item.score,
-      });
-    }
-
-    // Sort by highest similarity first
-    matches.sort((a, b) => b.similarity - a.similarity);
-
-    const DUPLICATE_THRESHOLD = 0.7; // 70% similarity threshold
-    const foundDuplicate = highestSim >= DUPLICATE_THRESHOLD;
-
-    return {
-      checked: true,
-      foundDuplicate,
-      highestSimilarity: Math.round(highestSim * 100) / 100,
-      matches,
-      queryTitle: title,
-    };
-  } catch (err) {
-    console.warn("[crossref:error] Failed duplicate check:", err);
-    return {
-      checked: false,
-      foundDuplicate: false,
-      highestSimilarity: 0,
-      matches: [],
-      queryTitle: title,
-    };
   }
+
+  // Process OpenAlex
+  if (openAlexRes.status === "fulfilled" && openAlexRes.value.ok) {
+    sourcesScanned.push("OpenAlex");
+    try {
+      const data = await openAlexRes.value.json();
+      const items = data.results ?? [];
+      for (const item of items) {
+        const itemTitle = item.title ?? "";
+        if (!itemTitle) continue;
+        const norm = normalizeTitle(itemTitle);
+        if (seenTitles.has(norm)) continue;
+        seenTitles.add(norm);
+
+        const rawDoi = item.doi ? item.doi.replace(/^https?:\/\/doi\.org\//, "") : undefined;
+        if (rawDoi && seenDois.has(rawDoi.toLowerCase())) continue;
+        if (rawDoi) seenDois.add(rawDoi.toLowerCase());
+
+        const sim = calculateTitleSimilarity(clean, itemTitle);
+        matches.push({
+          source: "OpenAlex",
+          doi: rawDoi,
+          title: itemTitle,
+          publisher: item.primary_location?.source?.display_name,
+          url: item.doi || (rawDoi ? `https://doi.org/${rawDoi}` : undefined),
+          similarity: Math.round(sim * 100) / 100,
+          year: item.publication_year,
+        });
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Process Europe PMC
+  if (europePmcRes.status === "fulfilled" && europePmcRes.value.ok) {
+    sourcesScanned.push("Europe PMC");
+    try {
+      const data = await europePmcRes.value.json();
+      const items = data.resultList?.result ?? [];
+      for (const item of items) {
+        const itemTitle = item.title ?? "";
+        if (!itemTitle) continue;
+        const norm = normalizeTitle(itemTitle);
+        if (seenTitles.has(norm)) continue;
+        seenTitles.add(norm);
+
+        const rawDoi = item.doi;
+        if (rawDoi && seenDois.has(rawDoi.toLowerCase())) continue;
+        if (rawDoi) seenDois.add(rawDoi.toLowerCase());
+
+        const sim = calculateTitleSimilarity(clean, itemTitle);
+        matches.push({
+          source: "Europe PMC",
+          doi: rawDoi,
+          title: itemTitle,
+          publisher: item.journalTitle,
+          url: rawDoi ? `https://doi.org/${rawDoi}` : undefined,
+          similarity: Math.round(sim * 100) / 100,
+          year: item.pubYear,
+        });
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Sort by highest similarity first
+  matches.sort((a, b) => b.similarity - a.similarity);
+
+  const highestSim = matches.length > 0 ? matches[0].similarity : 0;
+  const DUPLICATE_THRESHOLD = 0.7; // 70% similarity threshold
+  const foundDuplicate = highestSim >= DUPLICATE_THRESHOLD;
+
+  return {
+    checked: sourcesScanned.length > 0,
+    foundDuplicate,
+    highestSimilarity: Math.round(highestSim * 100) / 100,
+    matches,
+    queryTitle: title,
+    sourcesScanned,
+  };
 }

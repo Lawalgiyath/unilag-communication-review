@@ -3,6 +3,8 @@ import { requireSession, isEditor } from "@/lib/auth";
 import { JOURNAL } from "@/lib/constants";
 import { logoutAction } from "@/app/(auth)/logout/action";
 
+import { OrcidReminderToast } from "@/components/dashboard/OrcidReminderToast";
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -106,6 +108,9 @@ export default async function DashboardLayout({
       <div className="dashboard-content">
         {children}
       </div>
+
+      {/* ORCID Researcher Reminder Toast */}
+      <OrcidReminderToast user={{ name: user.name, orcid: user.orcid }} />
     </div>
   );
 }

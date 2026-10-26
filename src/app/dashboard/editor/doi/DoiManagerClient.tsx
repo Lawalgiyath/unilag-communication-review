@@ -67,7 +67,11 @@ export function DoiManagerClient({
 
   const handleTestConnection = () => {
     startTest(async () => {
-      const res = await testConnectionAction();
+      const res = await testConnectionAction({
+        accessToken: token,
+        isSandbox: sandbox,
+        community,
+      });
       setTestResult(res);
     });
   };

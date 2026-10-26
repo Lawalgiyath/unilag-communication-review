@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { publishAction } from "./action";
 import type { PublishState } from "./action";
+import { StyledFileInput } from "@/components/StyledFileInput";
 
 const initialState: PublishState = {};
 
@@ -35,8 +36,18 @@ export default function PublishForm({
       </div>
 
       <div className="field">
-        <label htmlFor="pub-doi" className="field-label">DOI <span className="font-normal text-secondary">(auto-generated if left blank)</span></label>
-        <input id="pub-doi" type="text" name="doi" placeholder="Auto-generated based on DOI Prefix" />
+        <label htmlFor="pub-doi" className="field-label">
+          DOI{" "}
+          <span className="font-normal text-secondary">
+            (leave blank to mint authentic Zenodo DOI)
+          </span>
+        </label>
+        <input
+          id="pub-doi"
+          type="text"
+          name="doi"
+          placeholder="e.g. 10.5281/zenodo.XXXXXXX or leave empty for Zenodo auto-mint"
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -68,14 +79,14 @@ export default function PublishForm({
         </div>
       </div>
 
-      <div className="field">
-        <label htmlFor="pub-pdf" className="field-label">
-          Typeset PDF <span className="font-normal text-secondary">(optional)</span>
-        </label>
-        <span className="field-hint">PDF only, max 5 MB.</span>
-        <input id="pub-pdf" type="file" name="typesettedPdf" accept=".pdf" className="w-auto" />
-        {state.errors?.typesettedPdf && <span className="field-error">{state.errors.typesettedPdf[0]}</span>}
-      </div>
+      <StyledFileInput
+        id="pub-pdf"
+        name="typesettedPdf"
+        label="Typeset PDF (optional)"
+        hint="PDF only, max 10 MB. This binary will be preserved in database storage and published live."
+        accept=".pdf"
+        error={state.errors?.typesettedPdf?.[0]}
+      />
 
       <div className="alert alert-warning">
         Publishing will create a publicly accessible article and notify the corresponding author.
