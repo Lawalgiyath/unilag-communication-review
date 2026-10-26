@@ -6,6 +6,7 @@ import {
   testConnectionAction,
   mintSingleDoiAction,
   mintAllDoisAction,
+  assignManualDoiAction,
 } from "./action";
 
 interface ArticleItem {
@@ -50,6 +51,24 @@ export function DoiManagerClient({
   const [isSaving, startSave] = useTransition();
   const [isTesting, startTest] = useTransition();
   const [isMintingAll, startMintAll] = useTransition();
+  const [editingDoiId, setEditingDoiId] = useState<string | null>(null);
+  const [manualDoiInput, setManualDoiInput] = useState<string>("");
+  const [isSavingManual, startSaveManual] = useTransition();
+
+  const handleStartEditDoi = (artId: string, currentDoi: string | null) => {
+    setEditingDoiId(artId);
+    setManualDoiInput(currentDoi || "");
+  };
+
+  const handleSaveManualDoi = (artId: string) => {
+    startSaveManual(async () => {
+      const res = await assignManualDoiAction(artId, manualDoiInput);
+      if (res.success) {
+        setEditingDoiId(null);
+        setStatusMsg(`Updated DOI to: ${res.doi || "None"}`);
+      }
+    });
+  };
 
   const handleSaveConfig = (e: React.FormEvent) => {
     e.preventDefault();
@@ -297,17 +316,55 @@ export function DoiManagerClient({
                       {art.firstPage && art.lastPage ? `${art.firstPage}–${art.lastPage}` : "—"}
                     </td>
                     <td className="py-3 pr-4 font-mono text-xs">
-                      {art.doi ? (
-                        <a
-                          href={`https://doi.org/${art.doi}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-maroon underline hover:text-oxblood break-all"
-                        >
-                          {art.doi}
-                        </a>
+                      {editingDoiId === art.id ? (
+                        <div className="flex items-center gap-1.5 min-w-[260px]">
+                          <input
+                            type="text"
+                            value={manualDoiInput}
+                            onChange={(e) => setManualDoiInput(e.target.value)}
+                            placeholder="e.g. 10.36108/..."
+                            className="w-full border border-hairline bg-paper px-2 py-1 text-xs text-ink focus:border-maroon focus:outline-none"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSaveManualDoi(art.id)}
+                            disabled={isSavingManual}
+                            className="bg-maroon px-2.5 py-1 text-[11px] font-semibold text-paper hover:bg-oxblood whitespace-nowrap"
+                          >
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingDoiId(null)}
+                            className="border border-hairline px-2 py-1 text-[11px] text-secondary hover:text-ink whitespace-nowrap"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       ) : (
-                        <span className="text-secondary italic">Not assigned</span>
+                        <div className="flex items-center gap-2">
+                          {art.doi ? (
+                            <a
+                              href={`https://doi.org/${art.doi}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-maroon underline hover:text-oxblood break-all"
+                            >
+                              {art.doi}
+                            </a>
+                          ) : (
+                            <span className="text-secondary italic">Not assigned</span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditDoi(art.id, art.doi)}
+                            className="text-[11px] text-secondary hover:text-maroon underline whitespace-nowrap ml-1"
+                            title="Assign or edit University Crossref DOI"
+                          >
+                            Edit
+                          </button>
+                        </div>
                       )}
                     </td>
                     <td className="py-3 text-right">

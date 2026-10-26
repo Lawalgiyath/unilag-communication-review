@@ -35,13 +35,16 @@ describe("Author Name Formatting (Google Scholar & Faculty Policy)", () => {
     expect(formatted).toBe("Janet Aver Adikpo");
   });
 
-  it("formatAuthorName preserves Professor and Doctor prefixes", () => {
+  it("formatAuthorName strips academic titles (Prof., Dr.) for article indexing", () => {
     expect(
       formatAuthorName({ first: "Sunday", last: "Oloruntola", title: "Prof." })
-    ).toBe("Prof. Sunday Oloruntola");
+    ).toBe("Sunday Oloruntola");
     expect(
       formatAuthorName({ first: "Unwana Samuel", last: "Akpan", title: "Dr." })
-    ).toBe("Dr. Unwana Samuel Akpan");
+    ).toBe("Unwana Samuel Akpan");
+    expect(
+      formatAuthorName({ first: "Prof. Sunday", last: "Oloruntola", title: null })
+    ).toBe("Sunday Oloruntola");
   });
 
   it("seed dataset contains zero Ph.D. titles across all authors", () => {

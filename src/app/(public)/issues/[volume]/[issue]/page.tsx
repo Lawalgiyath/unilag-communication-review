@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { JOURNAL } from "@/lib/constants";
 import { IssueCover } from "@/components/issue/IssueCover";
+import { IssueEditorsHeading } from "@/components/issue/IssueEditorsHeading";
 import { ArticleListItem } from "@/components/article/ArticleListItem";
 import { getIssue, DEMO_ISSUES } from "@/lib/demo-data";
 import { getLiveIssue } from "@/lib/public-data";
@@ -85,6 +86,7 @@ export default async function IssuePage({
             Volume {data.volumeNumber}, Number {data.number} ({data.volumeYear}) · Published {format(data.publishedAt, "d MMMM yyyy")} ·{" "}
             {data.articleCount} articles · ISSN {JOURNAL.issn}
           </p>
+          <IssueEditorsHeading />
 
           <h2 className="section-label mt-8 border-b border-hairline pb-2">
             Table of Contents

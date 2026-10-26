@@ -3,9 +3,18 @@
  * unit-testable without the database.
  */
 
+import { stripAcademicTitle } from "./author-name";
+
 export interface CitationAuthor {
   firstName: string;
   lastName: string;
+}
+
+function cleanAuthors(authors: CitationAuthor[]): CitationAuthor[] {
+  return authors.map((a) => ({
+    firstName: stripAcademicTitle(a.firstName),
+    lastName: stripAcademicTitle(a.lastName),
+  }));
 }
 
 export interface CitationData {
@@ -41,7 +50,8 @@ function doiOrUrl(d: CitationData): string {
 
 /** APA 7th edition. */
 export function formatAPA(d: CitationData): string {
-  const names = d.authors.map((a) => `${a.lastName}, ${initials(a.firstName)}`);
+  const authors = cleanAuthors(d.authors);
+  const names = authors.map((a) => `${a.lastName}, ${initials(a.firstName)}`);
   let authorStr: string;
   if (names.length === 0) authorStr = "";
   else if (names.length === 1) authorStr = names[0];
@@ -67,14 +77,15 @@ export function formatAPA(d: CitationData): string {
 
 /** MLA 9th edition. */
 export function formatMLA(d: CitationData): string {
-  const names = d.authors.map((a) => `${a.firstName} ${a.lastName}`);
+  const authors = cleanAuthors(d.authors);
+  const names = authors.map((a) => `${a.firstName} ${a.lastName}`);
   let authorStr: string;
   if (names.length === 0) authorStr = "";
   else if (names.length === 1)
-    authorStr = `${d.authors[0].lastName}, ${d.authors[0].firstName}.`;
+    authorStr = `${authors[0].lastName}, ${authors[0].firstName}.`;
   else if (names.length === 2)
-    authorStr = `${d.authors[0].lastName}, ${d.authors[0].firstName}, and ${names[1]}.`;
-  else authorStr = `${d.authors[0].lastName}, ${d.authors[0].firstName}, et al.`;
+    authorStr = `${authors[0].lastName}, ${authors[0].firstName}, and ${names[1]}.`;
+  else authorStr = `${authors[0].lastName}, ${authors[0].firstName}, et al.`;
 
   const vol = d.volume !== null ? `vol. ${d.volume}` : "";
   const iss = d.issue !== null ? `no. ${d.issue}` : "";
@@ -94,7 +105,8 @@ export function formatMLA(d: CitationData): string {
 
 /** Chicago author-date. */
 export function formatChicago(d: CitationData): string {
-  const names = d.authors.map(
+  const authors = cleanAuthors(d.authors);
+  const names = authors.map(
     (a, i) =>
       i === 0 ? `${a.lastName}, ${a.firstName}` : `${a.firstName} ${a.lastName}`
   );
@@ -124,7 +136,8 @@ export function formatChicago(d: CitationData): string {
 
 /** Harvard. */
 export function formatHarvard(d: CitationData): string {
-  const names = d.authors.map((a) => `${a.lastName}, ${initials(a.firstName)}`);
+  const authors = cleanAuthors(d.authors);
+  const names = authors.map((a) => `${a.lastName}, ${initials(a.firstName)}`);
   let authorStr: string;
   if (names.length === 0) authorStr = "";
   else if (names.length === 1) authorStr = names[0];
@@ -150,10 +163,11 @@ export function formatHarvard(d: CitationData): string {
 
 /** BibTeX @article entry. */
 export function formatBibTeX(d: CitationData, citeKey?: string): string {
+  const authors = cleanAuthors(d.authors);
   const key =
     citeKey ??
-    `${(d.authors[0]?.lastName ?? "anon").toLowerCase().replace(/[^a-z]/g, "")}${d.year ?? ""}`;
-  const authorField = d.authors
+    `${(authors[0]?.lastName ?? "anon").toLowerCase().replace(/[^a-z]/g, "")}${d.year ?? ""}`;
+  const authorField = authors
     .map((a) => `${a.lastName}, ${a.firstName}`)
     .join(" and ");
   const lines = [
@@ -174,8 +188,9 @@ export function formatBibTeX(d: CitationData, citeKey?: string): string {
 
 /** RIS export (EndNote / Zotero / Mendeley). */
 export function formatRIS(d: CitationData): string {
+  const authors = cleanAuthors(d.authors);
   const lines: string[] = ["TY  - JOUR"];
-  for (const a of d.authors) lines.push(`AU  - ${a.lastName}, ${a.firstName}`);
+  for (const a of authors) lines.push(`AU  - ${a.lastName}, ${a.firstName}`);
   lines.push(`TI  - ${d.title}`);
   lines.push(`JO  - ${d.journalTitle}`);
   if (d.year !== null) lines.push(`PY  - ${d.year}`);

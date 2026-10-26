@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { articleTypeLabel } from "@/lib/constants";
+import { stripAcademicTitle } from "@/lib/author-name";
 
 export interface ArticleListItemData {
   slug: string;
@@ -24,6 +25,8 @@ export function ArticleListItem({
   showIssue?: boolean;
   showViews?: boolean;
 }) {
+  const cleanedAuthors = article.authorNames.map((n) => stripAcademicTitle(n));
+
   return (
     <article className="border-b border-hairline py-4 last:border-b-0">
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-maroon">
@@ -38,7 +41,7 @@ export function ArticleListItem({
         </Link>
       </h3>
       <p className="mt-1.5 font-serif text-sm text-secondary">
-        {article.authorNames.join(", ")}
+        {cleanedAuthors.join(", ")}
       </p>
       <p className="mt-1 text-xs text-secondary">
         {showIssue && article.volume && (

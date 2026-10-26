@@ -12,6 +12,8 @@ import {
   searchArticles,
 } from "@/lib/demo-data";
 
+import { stripAcademicTitle } from "./author-name";
+
 function mapDbArticleToDemo(a: any): DemoArticle {
   const volNum = a.issue?.volume?.number ?? 1;
   const issueNum = a.issue?.number ?? 1;
@@ -22,19 +24,27 @@ function mapDbArticleToDemo(a: any): DemoArticle {
 
   const authors =
     a.authors && a.authors.length > 0
-      ? a.authors.map((auth: any) => ({
-          id: auth.id,
-          name: auth.name,
-          firstName: auth.firstName || auth.name.split(" ")[0] || "",
-          lastName:
+      ? a.authors.map((auth: any) => {
+          const rawName =
+            auth.name || `${auth.firstName || ""} ${auth.lastName || ""}`.trim();
+          const cleanName = stripAcademicTitle(rawName);
+          const rawFirst =
+            auth.firstName || rawName.split(" ")[0] || "";
+          const rawLast =
             auth.lastName ||
-            auth.name.split(" ").slice(1).join(" ") ||
-            auth.name,
-          affiliation: auth.affiliation || "",
-          orcid: auth.orcid || undefined,
-          isCorresponding: auth.isCorresponding ?? false,
-          order: auth.order ?? 0,
-        }))
+            rawName.split(" ").slice(1).join(" ") ||
+            rawName;
+          return {
+            id: auth.id,
+            name: cleanName,
+            firstName: stripAcademicTitle(rawFirst),
+            lastName: stripAcademicTitle(rawLast),
+            affiliation: auth.affiliation || "",
+            orcid: auth.orcid || undefined,
+            isCorresponding: auth.isCorresponding ?? false,
+            order: auth.order ?? 0,
+          };
+        })
       : [
           {
             id: "author-default",
@@ -64,16 +74,28 @@ function mapDbArticleToDemo(a: any): DemoArticle {
             slug: label.toLowerCase().replace(/\s+/g, "-"),
           }));
 
+  // Preserve full article text, figures, tables, and references from seed manuscripts
+  const demoCounterpart = getArticleBySlug(a.slug);
+  const bodyParagraphs =
+    demoCounterpart && demoCounterpart.bodyParagraphs && demoCounterpart.bodyParagraphs.length > 0
+      ? demoCounterpart.bodyParagraphs
+      : [a.abstract || ""];
+  const references =
+    demoCounterpart && demoCounterpart.references && demoCounterpart.references.length > 0
+      ? demoCounterpart.references
+      : [];
+  const resolvedDoi = a.doi || demoCounterpart?.doi || null;
+
   return {
     id: a.id,
     slug: a.slug,
     title: a.title,
     abstract: a.abstract || "",
-    articleType: a.articleType || "Research Article",
-    firstPage: a.firstPage || 1,
-    lastPage: a.lastPage || 1,
-    publishedOnline: a.publishedOnline || new Date(),
-    doi: a.doi || null,
+    articleType: a.articleType || demoCounterpart?.articleType || "Research Article",
+    firstPage: a.firstPage || demoCounterpart?.firstPage || 1,
+    lastPage: a.lastPage || demoCounterpart?.lastPage || 1,
+    publishedOnline: a.publishedOnline || demoCounterpart?.publishedOnline || new Date(),
+    doi: resolvedDoi,
     status: "PUBLISHED",
     orderInIssue: 1,
     issueId: a.issueId,
@@ -82,8 +104,8 @@ function mapDbArticleToDemo(a: any): DemoArticle {
     volumeYear: volYear,
     authors,
     keywords,
-    references: [],
-    bodyParagraphs: [a.abstract || ""],
+    references,
+    bodyParagraphs,
   };
 }
 

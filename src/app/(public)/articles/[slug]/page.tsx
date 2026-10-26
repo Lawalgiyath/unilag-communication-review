@@ -26,6 +26,7 @@ import {
   type DemoArticle,
 } from "@/lib/demo-data";
 import { getLiveArticle } from "@/lib/public-data";
+import { stripAcademicTitle } from "@/lib/author-name";
 
 export const dynamic = "force-dynamic";
 
@@ -37,8 +38,8 @@ function toScholar(article: DemoArticle, baseUrl: string): ScholarArticle {
   return {
     title: article.title,
     authors: article.authors.map((a) => ({
-      lastName: a.lastName,
-      firstName: a.firstName,
+      lastName: stripAcademicTitle(a.lastName),
+      firstName: stripAcademicTitle(a.firstName),
     })),
     publishedOnline: article.publishedOnline,
     journalTitle: JOURNAL.title,
@@ -60,8 +61,8 @@ function toCitationData(article: DemoArticle, baseUrl: string): CitationData {
   return {
     title: article.title,
     authors: article.authors.map((a) => ({
-      firstName: a.firstName,
-      lastName: a.lastName,
+      firstName: stripAcademicTitle(a.firstName),
+      lastName: stripAcademicTitle(a.lastName),
     })),
     year: article.publishedOnline.getUTCFullYear(),
     journalTitle: JOURNAL.title,
@@ -155,7 +156,7 @@ export default async function ArticlePage({
         <div className="mt-5">
           <AuthorList
             authors={article.authors.map((a) => ({
-              name: a.name,
+              name: stripAcademicTitle(a.name),
               affiliation: a.affiliation,
               orcid: a.orcid,
               email: a.email,
@@ -276,11 +277,46 @@ export default async function ArticlePage({
         </p>
       </section>
 
+      {/* Full-Text PDF Viewer */}
+      <section aria-labelledby="pdf-viewer-heading" className="mt-12 no-print">
+        <div className="flex items-center justify-between border-b border-hairline pb-2">
+          <h2 id="pdf-viewer-heading" className="section-label">
+            Full-Text PDF
+          </h2>
+          <div className="flex items-center gap-3 text-xs">
+            <a
+              href={`/articles/${article.slug}/download.pdf`}
+              download={`${article.slug}.pdf`}
+              className="font-semibold text-maroon hover:underline"
+            >
+              Download PDF ↓
+            </a>
+            <span className="text-secondary">|</span>
+            <a
+              href={`/articles/${article.slug}/download.pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-maroon hover:underline"
+            >
+              Open in new tab ↗
+            </a>
+          </div>
+        </div>
+        <div className="mt-4 overflow-hidden rounded border border-hairline bg-paper-dark shadow-inner">
+          <iframe
+            src={`/articles/${article.slug}/download.pdf#toolbar=1&navpanes=0`}
+            title={`Full PDF for ${article.title}`}
+            className="h-[800px] w-full border-0"
+            loading="lazy"
+          />
+        </div>
+      </section>
+
       {/* Full-Text Article Body with Tables and Figures */}
       {article.bodyParagraphs && article.bodyParagraphs.length > 0 && (
         <section aria-labelledby="fulltext-heading" className="mt-12">
           <h2 id="fulltext-heading" className="section-label border-b border-hairline pb-2">
-            Full Article
+            Full Article Text
           </h2>
           <div className="mt-6">
             <ArticleBody paragraphs={article.bodyParagraphs} />

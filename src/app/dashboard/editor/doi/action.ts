@@ -184,3 +184,19 @@ export async function mintAllDoisAction() {
   revalidatePath("/");
   return { success: true, results };
 }
+
+export async function assignManualDoiAction(articleId: string, doi: string) {
+  const user = await requireSession();
+  await requireRole(user, ["EDITOR", "ADMIN"]);
+
+  const cleanDoi = doi.trim();
+  await db.article.update({
+    where: { id: articleId },
+    data: { doi: cleanDoi || null },
+  });
+
+  revalidatePath("/dashboard/editor/doi");
+  revalidatePath("/");
+  return { success: true, doi: cleanDoi };
+}
+

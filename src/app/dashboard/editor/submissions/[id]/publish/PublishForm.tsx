@@ -37,16 +37,16 @@ export default function PublishForm({
 
       <div className="field">
         <label htmlFor="pub-doi" className="field-label">
-          DOI{" "}
+          Digital Object Identifier (DOI){" "}
           <span className="font-normal text-secondary">
-            (leave blank to mint authentic Zenodo DOI)
+            (enter University Crossref DOI or leave blank to auto-mint)
           </span>
         </label>
         <input
           id="pub-doi"
           type="text"
           name="doi"
-          placeholder="e.g. 10.5281/zenodo.XXXXXXX or leave empty for Zenodo auto-mint"
+          placeholder="e.g. 10.36108/... (University Crossref DOI) or 10.5281/zenodo...."
         />
       </div>
 

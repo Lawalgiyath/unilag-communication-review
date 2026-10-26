@@ -130,4 +130,26 @@ describe("RIS", () => {
     expect(s).toContain("EP  - 325");
     expect(s.trimEnd().endsWith("ER  -")).toBe(true);
   });
+
+  it("strips academic titles (Prof., Dr., etc.) from author names in citations", () => {
+    const withTitles: CitationData = {
+      ...base,
+      authors: [
+        { firstName: "Prof. Sunday", lastName: "Oloruntola" },
+        { firstName: "Dr. Unwana Samuel", lastName: "Akpan, Ph.D." },
+      ],
+    };
+    const apa = formatAPA(withTitles);
+    expect(apa).toContain("Oloruntola, S., & Akpan, U. S.");
+    expect(apa).not.toContain("Prof");
+    expect(apa).not.toContain("Dr");
+    expect(apa).not.toContain("Ph.D");
+
+    const ris = formatRIS(withTitles);
+    expect(ris).toContain("AU  - Oloruntola, Sunday");
+    expect(ris).toContain("AU  - Akpan, Unwana Samuel");
+
+    const bib = formatBibTeX(withTitles);
+    expect(bib).toContain("author  = {Oloruntola, Sunday and Akpan, Unwana Samuel}");
+  });
 });

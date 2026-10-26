@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { JOURNAL } from "@/lib/constants";
 import { SectionLabel } from "@/components/ui/SectionLabel";
 import { IssueCover } from "@/components/issue/IssueCover";
+import { IssueEditorsHeading } from "@/components/issue/IssueEditorsHeading";
 import {
   ArticleListItem,
   type ArticleListItemData,
@@ -88,6 +89,7 @@ export default async function HomePage() {
               <p className="mt-1 font-serif text-sm text-secondary">
                 Volume {currentIssue.volumeNumber}, Number {currentIssue.number} ({currentIssue.volumeYear}) · Published {format(currentIssue.publishedAt, "d MMMM yyyy")} · {currentIssue.articleCount} articles
               </p>
+              <IssueEditorsHeading />
               <div className="mt-4">
                 {currentIssue.articles.slice(0, 5).map((a) => (
                   <ArticleListItem key={a.id} article={toListItem(a)} />
