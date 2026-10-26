@@ -4,7 +4,7 @@ import { z } from "zod";
 import crypto from "node:crypto";
 import { db } from "@/lib/db";
 import { sendEmail, brandedEmailHtml } from "@/lib/email";
-import { JOURNAL } from "@/lib/constants";
+import { JOURNAL, siteUrl } from "@/lib/constants";
 
 const ForgotPasswordSchema = z.object({
   email: z.string().email("Enter a valid email address"),
@@ -57,7 +57,7 @@ export async function forgotPasswordAction(
     },
   });
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const baseUrl = siteUrl();
   const resetUrl = `${baseUrl}/reset-password?token=${token}`;
 
   await sendEmail({

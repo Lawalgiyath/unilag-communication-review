@@ -54,6 +54,13 @@ export default function SettingsClient({
               <label htmlFor="tagline" className="field-label">Tagline</label>
               <input id="tagline" type="text" name="tagline" defaultValue={getVal("tagline")} />
             </div>
+            <div className="field">
+              <label htmlFor="base_url" className="field-label">Production Website URL</label>
+              <input id="base_url" type="url" name="base_url" defaultValue={getVal("base_url") || "https://unilag-communication-review.vercel.app"} placeholder="https://unilag-communication-review.vercel.app" required />
+              <p className="mt-1 text-[11px] text-secondary">
+                Canonical domain used for citation exports (RIS, BibTeX), Highwire Press metadata, RSS feeds, and email notifications.
+              </p>
+            </div>
           </div>
         </fieldset>
 

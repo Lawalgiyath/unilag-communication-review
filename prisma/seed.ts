@@ -327,7 +327,9 @@ async function main() {
   }
 
   // ---- settings ----
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    "https://unilag-communication-review.vercel.app";
   await db.setting.createMany({
     data: [
       { key: "journal_title", value: JOURNAL_TITLE },

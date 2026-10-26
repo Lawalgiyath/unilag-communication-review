@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireSession } from "@/lib/auth";
 import { sendEmail } from "@/lib/email";
-import { JOURNAL } from "@/lib/constants";
+import { JOURNAL, siteUrl } from "@/lib/constants";
 
 const AssignSchema = z.object({
   reviewerEmail: z.string().email("Enter a valid email address"),
@@ -96,7 +96,7 @@ export async function assignReviewerAction(
   await sendEmail({
     to: reviewer.email,
     subject: `Invitation to review: ${JOURNAL.shortTitle}`,
-    text: `Dear ${reviewer.name},\n\nYou have been invited to review a manuscript submitted to ${JOURNAL.title}.\n\nPlease log in to respond to this invitation: ${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/dashboard/reviews/${assignment.id}\n\nDue date: ${new Date(dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}\n${note ? `\nNote from editor: ${note}\n` : ""}\nWarm regards,\n${JOURNAL.title} Editorial Office`,
+    text: `Dear ${reviewer.name},\n\nYou have been invited to review a manuscript submitted to ${JOURNAL.title}.\n\nPlease log in to respond to this invitation: ${siteUrl()}/dashboard/reviews/${assignment.id}\n\nDue date: ${new Date(dueDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}\n${note ? `\nNote from editor: ${note}\n` : ""}\nWarm regards,\n${JOURNAL.title} Editorial Office`,
     template: "reviewer_invited",
   });
 

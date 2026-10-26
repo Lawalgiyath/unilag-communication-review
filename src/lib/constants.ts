@@ -19,10 +19,32 @@ export const JOURNAL = {
 } as const;
 
 export function siteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(
-    /\/+$/,
-    ""
-  );
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  // Allow localhost only when explicitly in local development mode
+  if (
+    process.env.NODE_ENV === "development" &&
+    envUrl &&
+    (envUrl.includes("localhost") || envUrl.includes("127.0.0.1"))
+  ) {
+    return envUrl.replace(/\/+$/, "");
+  }
+  if (
+    envUrl &&
+    !envUrl.includes("localhost") &&
+    !envUrl.includes("127.0.0.1")
+  ) {
+    return envUrl.replace(/\/+$/, "");
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`.replace(
+      /\/+$/,
+      ""
+    );
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`.replace(/\/+$/, "");
+  }
+  return "https://unilag-communication-review.vercel.app";
 }
 
 export const ARTICLE_TYPES = {
