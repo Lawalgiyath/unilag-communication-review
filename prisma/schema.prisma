@@ -397,6 +397,7 @@ model BoardMember {
   name        String
   role        String // 'Editor-in-Chief' | 'Editor' | 'Member'
   affiliation String
+  photoUrl    String?
   orcid       String?
   order       Int
 }

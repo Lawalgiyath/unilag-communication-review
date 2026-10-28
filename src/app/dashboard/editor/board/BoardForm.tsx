@@ -16,6 +16,7 @@ export default function BoardForm({
     role: string;
     affiliation: string;
     orcid: string | null;
+    photoUrl?: string | null;
     order: number;
   };
 }) {
@@ -46,16 +47,24 @@ export default function BoardForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="field">
+          <label htmlFor="photoUrl" className="field-label">Photo URL <span className="font-normal text-secondary">(optional)</span></label>
+          <span className="field-hint">e.g. /images/board/name.jpg or full image URL</span>
+          <input id="photoUrl" type="text" name="photoUrl" defaultValue={member?.photoUrl ?? ""} placeholder="/images/board/..." aria-invalid={!!state.errors?.photoUrl} />
+          {state.errors?.photoUrl && <span className="field-error">{state.errors.photoUrl[0]}</span>}
+        </div>
+        <div className="field">
           <label htmlFor="orcid" className="field-label">ORCID <span className="font-normal text-secondary">(optional)</span></label>
+          <span className="field-hint">16-digit ID with hyphens</span>
           <input id="orcid" type="text" name="orcid" defaultValue={member?.orcid ?? ""} placeholder="0000-0000-0000-0000" aria-invalid={!!state.errors?.orcid} />
           {state.errors?.orcid && <span className="field-error">{state.errors.orcid[0]}</span>}
         </div>
-        <div className="field">
-          <label htmlFor="order" className="field-label">Display Order <span aria-hidden="true" className="text-error">*</span></label>
-          <span className="field-hint">Lower numbers appear first on the public site.</span>
-          <input id="order" type="number" name="order" defaultValue={member?.order ?? 10} min={0} required aria-invalid={!!state.errors?.order} />
-          {state.errors?.order && <span className="field-error">{state.errors.order[0]}</span>}
-        </div>
+      </div>
+
+      <div className="field max-w-xs">
+        <label htmlFor="order" className="field-label">Display Order <span aria-hidden="true" className="text-error">*</span></label>
+        <span className="field-hint">Lower numbers appear first on the public site.</span>
+        <input id="order" type="number" name="order" defaultValue={member?.order ?? 10} min={0} required aria-invalid={!!state.errors?.order} />
+        {state.errors?.order && <span className="field-error">{state.errors.order[0]}</span>}
       </div>
 
       <div className="flex justify-between">

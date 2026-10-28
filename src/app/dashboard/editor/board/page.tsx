@@ -30,7 +30,7 @@ export default async function BoardManagementPage() {
         <thead>
           <tr>
             <th>Order</th>
-            <th>Name</th>
+            <th>Member</th>
             <th>Role</th>
             <th>Affiliation</th>
             <th>ORCID</th>
@@ -41,7 +41,22 @@ export default async function BoardManagementPage() {
           {members.map((m) => (
             <tr key={m.id}>
               <td className="font-mono text-xs text-secondary">{m.order}</td>
-              <td className="font-medium text-ink">{m.name}</td>
+              <td>
+                <div className="flex items-center gap-3">
+                  {m.photoUrl ? (
+                    <img
+                      src={m.photoUrl}
+                      alt={m.name}
+                      className="h-9 w-9 rounded-full object-cover object-top border border-hairline"
+                    />
+                  ) : (
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-parchment text-xs font-semibold text-maroon border border-hairline">
+                      {m.name.charAt(0)}
+                    </div>
+                  )}
+                  <span className="font-medium text-ink">{m.name}</span>
+                </div>
+              </td>
               <td className="text-sm text-secondary">{m.role}</td>
               <td className="text-sm text-secondary">{m.affiliation}</td>
               <td className="text-sm">

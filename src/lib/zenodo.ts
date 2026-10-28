@@ -1,5 +1,6 @@
 import { db } from "./db";
 import { JOURNAL } from "./constants";
+import { formatAuthorForZenodo } from "./author-name";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -173,18 +174,6 @@ export async function testZenodoConnection(configOverride?: Partial<ZenodoConfig
   }
 }
 
-/**
- * Format author name into "Last, First" for Zenodo
- */
-function formatAuthorForZenodo(name: string): string {
-  const cleaned = name.trim().replace(/^(Dr\.|Prof\.|Mr\.|Mrs\.|Ms\.)\s+/i, "");
-  if (cleaned.includes(",")) return cleaned;
-  const parts = cleaned.split(/\s+/);
-  if (parts.length <= 1) return cleaned;
-  const last = parts.pop()!;
-  const first = parts.join(" ");
-  return `${last}, ${first}`;
-}
 
 /**
  * Clean ORCID string to just 16 characters or URL format

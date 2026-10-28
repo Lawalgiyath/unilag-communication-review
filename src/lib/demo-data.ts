@@ -287,6 +287,7 @@ export interface DemoBoardMember {
   name: string;
   role: string;
   affiliation: string;
+  photoUrl?: string | null;
   orcid: string | null;
   order: number;
 }
@@ -297,7 +298,8 @@ export const DEMO_BOARD: DemoBoardMember[] = [
     name: "Dr. Ebenezer Adebisi Olawuyi",
     role: "Special Issue Guest Editor",
     affiliation: "Department of Communication and Language Arts, University of Ibadan, Nigeria",
-    orcid: null,
+    photoUrl: "/images/board/ebenezer-adebisi-olawuyi.jpg",
+    orcid: "0000-0002-7769-5715",
     order: 1,
   },
   {
@@ -305,6 +307,7 @@ export const DEMO_BOARD: DemoBoardMember[] = [
     name: "Prof. Sunday Oloruntola",
     role: "Editor-in-Chief",
     affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
+    photoUrl: "/images/board/sunday-oloruntola.png",
     orcid: null,
     order: 2,
   },
@@ -313,7 +316,8 @@ export const DEMO_BOARD: DemoBoardMember[] = [
     name: "Dr. Unwana Samuel Akpan",
     role: "Editor",
     affiliation: "Department of Journalism, Broadcasting and Media Studies, University of Lagos, Nigeria.",
-    orcid: null,
+    photoUrl: "/images/board/unwana-samuel-akpan.jpg",
+    orcid: "0009-0003-1990-5694",
     order: 3,
   },
   {
@@ -321,6 +325,7 @@ export const DEMO_BOARD: DemoBoardMember[] = [
     name: "Prof. Adepoju Tejumaiye",
     role: "Member",
     affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
+    photoUrl: "/images/board/adepoju-tejumaiye.jpg",
     orcid: null,
     order: 4,
   },
@@ -329,6 +334,7 @@ export const DEMO_BOARD: DemoBoardMember[] = [
     name: "Prof. Ishmael Ibrahim",
     role: "Member",
     affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
+    photoUrl: "/images/board/ishmael-ibrahim.png",
     orcid: null,
     order: 5,
   },
@@ -337,6 +343,7 @@ export const DEMO_BOARD: DemoBoardMember[] = [
     name: "Dr. Tayo Popoola",
     role: "Member",
     affiliation: "Faculty of Communication and Media Studies, University of Lagos, Nigeria",
+    photoUrl: "/images/board/tayo-popoola.jpg",
     orcid: null,
     order: 6,
   },

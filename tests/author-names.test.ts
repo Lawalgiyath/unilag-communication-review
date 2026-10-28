@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatAuthorName, normaliseTitle } from "@/lib/author-name";
+import { formatAuthorName, formatAuthorForZenodo, normaliseTitle } from "@/lib/author-name";
 import { REAL_ARTICLES } from "../prisma/seed-data";
 
 describe("Author Name Formatting (Google Scholar & Faculty Policy)", () => {
@@ -45,6 +45,17 @@ describe("Author Name Formatting (Google Scholar & Faculty Policy)", () => {
     expect(
       formatAuthorName({ first: "Prof. Sunday", last: "Oloruntola", title: null })
     ).toBe("Sunday Oloruntola");
+  });
+
+  it("formatAuthorForZenodo formats authors strictly as Family, Given with zero titles", () => {
+    expect(formatAuthorForZenodo("Janet Aver Adikpo")).toBe("Adikpo, Janet Aver");
+    expect(formatAuthorForZenodo("Adikpo, Ph.D. Janet Aver")).toBe("Adikpo, Janet Aver");
+    expect(formatAuthorForZenodo("Janet Aver Adikpo, Ph.D.")).toBe("Adikpo, Janet Aver");
+    expect(formatAuthorForZenodo("Professor Adepoju Tejumaiye")).toBe("Tejumaiye, Adepoju");
+    expect(formatAuthorForZenodo("Tejumaiye, Professor Adepoju")).toBe("Tejumaiye, Adepoju");
+    expect(formatAuthorForZenodo("Dr. Hassan Biodun Suleiman")).toBe("Suleiman, Hassan Biodun");
+    expect(formatAuthorForZenodo("Suleiman, Ph.D. Hassan Biodun")).toBe("Suleiman, Hassan Biodun");
+    expect(formatAuthorForZenodo("Engr. Musa Usman")).toBe("Usman, Musa");
   });
 
   it("seed dataset contains zero Ph.D. titles across all authors", () => {
